@@ -180,7 +180,7 @@ export async function testWebhookEndpoint(
 export async function dispatchLead(
   config: SiteConfig,
   payload: Record<string, unknown>,
-): Promise<{ ok: boolean; results: WebhookResult[] }> {
+): Promise<{ ok: boolean; results: WebhookResult[]; failedCount?: number }> {
   const endpoints: WebhookEndpoint[] = [];
 
   const primary = config.form.webhookUrl?.trim();
@@ -212,5 +212,10 @@ export async function dispatchLead(
       }),
     ),
   );
-  return { ok: results.every((r) => r.ok), results };
+  const failed = results.filter((r) => !r.ok);
+  return {
+    ok: failed.length === 0 || results.some((r) => r.ok),
+    results,
+    failedCount: failed.length,
+  };
 }

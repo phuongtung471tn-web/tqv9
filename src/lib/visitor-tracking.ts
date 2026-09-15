@@ -37,6 +37,7 @@ type RuntimeState = {
   copiedTextType: string;
   isCopyPaste: boolean;
   scrollVelocity: number;
+  maxScrollVelocity: number;
   scrollBackCount: number;
   lastScrollY: number;
   lastScrollTime: number;
@@ -106,6 +107,7 @@ const runtime: RuntimeState = {
   copiedTextType: "",
   isCopyPaste: false,
   scrollVelocity: 0,
+  maxScrollVelocity: 0,
   scrollBackCount: 0,
   lastScrollY: 0,
   lastScrollTime: 0,
@@ -483,6 +485,7 @@ function computeMetrics(): VisitorMetrics {
     formFillDurationSeconds,
     scrollDepthPercent: runtime.maxScrollPercent,
     scrollVelocity: runtime.scrollVelocity,
+    maxScrollVelocity: runtime.maxScrollVelocity,
     scrollBackCount: runtime.scrollBackCount,
     industrySwitchCount: Math.max(0, runtime.industrySwitchCount - 1),
     focusSection,
@@ -539,22 +542,28 @@ function readLocalSessionCounts(isNewSession: boolean): VisitorSessionCounts {
   const stored = readJSON<{
     day: { key: string; count: number };
     month: { key: string; count: number };
+    totalSessions: number;
   }>(COUNTERS_KEY, {
     day: { key: dayKey(), count: 0 },
     month: { key: monthKey(), count: 0 },
+    totalSessions: 0,
   });
 
   const nextDay = stored.day.key === dayKey() ? stored.day.count : 0;
   const nextMonth = stored.month.key === monthKey() ? stored.month.count : 0;
   const dayCount = isNewSession ? nextDay + 1 : Math.max(1, nextDay);
   const monthCount = isNewSession ? nextMonth + 1 : Math.max(1, nextMonth);
+  const totalSessions = isNewSession
+    ? (stored.totalSessions || 0) + 1
+    : Math.max(1, stored.totalSessions || 1);
 
   writeJSON(COUNTERS_KEY, {
     day: { key: dayKey(), count: dayCount },
     month: { key: monthKey(), count: monthCount },
+    totalSessions,
   });
 
-  return { currentSession: dayCount, today: dayCount, month: monthCount };
+  return { currentSession: totalSessions, today: dayCount, month: monthCount };
 }
 
 async function fetchRemoteSessionCounts(
@@ -626,9 +635,9 @@ async function fetchRemoteSessionCounts(
     ])) as [{ id: string }[], { id: string }[]];
 
     runtime.sessionCounts = {
-      currentSession: Array.isArray(todayRows)
-        ? todayRows.length
-        : runtime.sessionCounts.today,
+      currentSession: Array.isArray(monthRows)
+        ? monthRows.length
+        : runtime.sessionCounts.currentSession,
       today: Array.isArray(todayRows)
         ? todayRows.length
         : runtime.sessionCounts.today,
@@ -749,6 +758,7 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
   runtime.copiedTextType = "";
   runtime.isCopyPaste = false;
   runtime.scrollVelocity = 0;
+  runtime.maxScrollVelocity = 0;
   runtime.scrollBackCount = 0;
   runtime.lastScrollY = 0;
   runtime.lastScrollTime = 0;
@@ -790,7 +800,9 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
     const dt = now - runtime.lastScrollTime;
     if (dt > 0 && runtime.lastScrollTime > 0) {
       const dy = Math.abs(currentY - runtime.lastScrollY);
-      runtime.scrollVelocity = Math.round(dy / dt * 1000);
+      const v = Math.round(dy / dt * 1000);
+      runtime.scrollVelocity = v;
+      runtime.maxScrollVelocity = Math.max(runtime.maxScrollVelocity, v);
       if (currentY < runtime.lastScrollY - 5) {
         runtime.scrollBackCount += 1;
       }
@@ -947,7 +959,8 @@ export function collectBehavior(form: {
     copied_text_type: snapshot.metrics.copiedTextType,
     is_copy_paste: snapshot.metrics.isCopyPaste,
     is_headless_browser: snapshot.metrics.isHeadlessBrowser,
-    submission_count_same_ip: submissionCount,
+    submission_count_same_visitor: submissionCount,
+    max_scroll_velocity: snapshot.metrics.maxScrollVelocity,
     device_model_name: snapshot.device.model,
     device_manufacturer: snapshot.device.manufacturer,
     device_family: snapshot.device.family,

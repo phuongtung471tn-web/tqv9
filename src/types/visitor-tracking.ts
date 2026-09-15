@@ -60,6 +60,7 @@ export interface VisitorMetrics {
   formFillDurationSeconds: number;
   scrollDepthPercent: number;
   scrollVelocity: number;
+  maxScrollVelocity: number;
   scrollBackCount: number;
   industrySwitchCount: number;
   focusSection: string;
@@ -89,6 +90,7 @@ export interface BehaviorData {
   form_fill_duration_seconds: number;
   scroll_depth_percent: number;
   scroll_velocity: number;
+  max_scroll_velocity: number;
   scroll_back_count: number;
   industry_switch_count: number;
   focus_section: string;
@@ -96,7 +98,7 @@ export interface BehaviorData {
   copied_text_type: string;
   is_copy_paste: boolean;
   is_headless_browser: boolean;
-  submission_count_same_ip: number;
+  submission_count_same_visitor: number;
   device_model_name: string;
   device_manufacturer: string;
   device_family: string;

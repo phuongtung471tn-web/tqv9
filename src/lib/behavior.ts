@@ -73,9 +73,9 @@ function scoreLead(
   ) {
     reasons.push(`Thời gian điền form dưới ${fastFill} giây`);
   }
-  if (data.submission_count_same_ip > 1) {
+  if (data.submission_count_same_visitor > 1) {
     reasons.push(
-      `Thiết bị đã ghi nhận ${data.submission_count_same_ip} lần gửi trong ngày`,
+      `Thiết bị đã ghi nhận ${data.submission_count_same_visitor} lần gửi trong ngày`,
     );
   }
   if (locationMismatch && data.is_copy_paste) {
@@ -86,8 +86,8 @@ function scoreLead(
   if (data.network_flags.length > 0) {
     reasons.push(`Mạng có tín hiệu: ${data.network_flags.join(", ")}`);
   }
-  if (data.scroll_velocity > 5000) {
-    reasons.push(`Tốc độ cuộn ${data.scroll_velocity}px/s bất thường`);
+  if (data.max_scroll_velocity > 5000) {
+    reasons.push(`Tốc độ cuộn ${data.max_scroll_velocity}px/s bất thường`);
   }
   if (data.scroll_back_count > 10) {
     reasons.push(`Cuộn lên/xuống ${data.scroll_back_count} lần bất thường`);
@@ -135,10 +135,10 @@ function scoreLead(
   score = Math.max(0, Math.min(100, score));
 
   const riskLevel: LeadRiskLevel =
-    data.submission_count_same_ip > 1 ||
+    data.submission_count_same_visitor > 1 ||
     (locationMismatch && data.is_copy_paste) ||
     data.network_flags.includes("Tor") ||
-    data.scroll_velocity > 8000
+    data.max_scroll_velocity > 8000
       ? "high"
       : data.form_fill_duration_seconds > 0 &&
           data.form_fill_duration_seconds < fastFill
@@ -365,7 +365,7 @@ export function buildVisitorBehaviorPayload(
       attribution: snapshot.attribution,
       metrics: {
         ...snapshot.metrics,
-        submissionCountSameVisitor: behavior.submission_count_same_ip,
+        submissionCountSameVisitor: behavior.submission_count_same_visitor,
       },
       form: input,
       assessment,

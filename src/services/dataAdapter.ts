@@ -231,6 +231,12 @@ export interface LeadRecord {
   ttclid?: string | undefined;
   utmSource?: string | undefined;
   variant?: string | undefined;
+  landing_url?: string | undefined;
+  deviceManufacturer?: string | undefined;
+  deviceFamily?: string | undefined;
+  deviceModel?: string | undefined;
+  operatingSystem?: string | undefined;
+  browser?: string | undefined;
   /** Nơi bản ghi được lưu: máy khách hay đám mây. */
   storage?: StorageMode | undefined;
 }
@@ -252,6 +258,38 @@ export function isDuplicateLead(phone: string): boolean {
   return loadLeads().some(
     (l) => l.phone === phone && new Date(l.at).getTime() > cutoff,
   );
+}
+
+/** Trùng lặp từ xa: kiểm tra Supabase trong Database Mode. */
+export async function isDuplicateLeadRemote(
+  phone: string,
+  config?: SiteConfig,
+): Promise<boolean> {
+  if (
+    !isBrowser() ||
+    config?.admin.storageMode !== "database" ||
+    !config.admin.supabaseUrl ||
+    !config.admin.supabaseAnonKey
+  ) {
+    return false;
+  }
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const url =
+      `${config.admin.supabaseUrl.replace(/\/$/, "")}/rest/v1/leads` +
+      `?phone=eq.${encodeURIComponent(phone)}&created_at=gte.${cutoff}&select=id`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: config.admin.supabaseAnonKey,
+        Authorization: `Bearer ${config.admin.supabaseAnonKey}`,
+      },
+    });
+    if (!res.ok) return false;
+    const rows = (await res.json()) as unknown[];
+    return Array.isArray(rows) && rows.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 export function clearLeads(): void {
@@ -334,9 +372,15 @@ async function pushLeadToSupabase(
           utm_content: lead.utmContent ?? null,
           ttclid: lead.ttclid ?? null,
           variant: lead.variant ?? null,
+          landing_url: (lead as Record<string, unknown>).landing_url ?? null,
+          device_manufacturer: (lead as Record<string, unknown>).deviceManufacturer ?? null,
+          device_family: (lead as Record<string, unknown>).deviceFamily ?? null,
+          device_model: (lead as Record<string, unknown>).deviceModel ?? null,
+          operating_system: (lead as Record<string, unknown>).operatingSystem ?? null,
+          browser: (lead as Record<string, unknown>).browser ?? null,
           visitor_behavior_payload: lead.visitorBehaviorPayload ?? null,
           created_at: lead.at,
-        },
+          },
       ]),
     });
     return res.ok;

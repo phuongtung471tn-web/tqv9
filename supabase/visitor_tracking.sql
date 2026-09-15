@@ -28,8 +28,17 @@ create table if not exists public.leads (
   utm_content text,
   ttclid text,
   variant text,
+  landing_url text,
+  device_manufacturer text,
+  device_family text,
+  device_model text,
+  operating_system text,
+  browser text,
   visitor_behavior_payload jsonb
 );
+
+create index if not exists leads_phone_created_idx
+  on public.leads (phone, created_at desc);
 
 create table if not exists public.visitor_sessions (
   id text primary key,

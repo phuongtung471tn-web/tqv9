@@ -12,6 +12,7 @@ import { useSiteConfig } from "@/lib/use-site-config";
 import { dispatchLead } from "@/services/webhooks";
 import {
   isDuplicateLead,
+  isDuplicateLeadRemote,
   saveLead,
   trackConversion,
   type LeadRecord,
@@ -219,6 +220,14 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       return;
     }
 
+    if (await isDuplicateLeadRemote(phone, config)) {
+      setError(
+        "Số điện thoại này vừa được đăng ký. Tư vấn viên sẽ liên hệ với bạn sớm nhất.",
+      );
+      setStatus("error");
+      return;
+    }
+
     if (
       rateLimited(config.form.rateLimitCount, config.form.rateLimitWindowMin)
     ) {
@@ -242,7 +251,8 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       );
     const { score: aiScore, rank: aiRank } = assessment;
     const variant = getVariant(config.abTest.enabled, config.abTest.split);
-    const source = utmSource();
+    const sessionSource = utmSource();
+    const source = behavior.utm_source || sessionSource;
 
     const payload = {
       full_name: name.slice(0, 100),
@@ -323,22 +333,20 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         utmContent: payload.utm_content,
         ttclid: payload.ttclid,
         variant,
-      };
+      } as LeadRecord;
       await saveLead(leadRecord, config);
 
       // Chờ toàn bộ endpoint đã bật nhận lead trước khi xác nhận chuyển đổi.
       const delivery = await dispatchLead(config, payload);
-      if (!delivery.ok) {
+      if (delivery.failedCount && delivery.failedCount > 0) {
         const failed = delivery.results
           .filter((result) => !result.ok)
           .map((result) => result.label)
           .join(", ");
-        console.warn("Webhook delivery incomplete:", delivery.results);
-        throw new Error(
-          failed
-            ? `Webhook chưa nhận được dữ liệu: ${failed}`
-            : "Webhook chưa được cấu hình hoặc chưa phản hồi.",
-        );
+        console.warn(`Webhook partial failure (${delivery.failedCount}/${delivery.results.length}): ${failed}`);
+      }
+      if (!delivery.ok) {
+        throw new Error("Webhook chưa được cấu hình hoặc chưa phản hồi.");
       }
 
       // Ghi nhận chuyển đổi cho Analytics Dashboard + A/B comparison.
