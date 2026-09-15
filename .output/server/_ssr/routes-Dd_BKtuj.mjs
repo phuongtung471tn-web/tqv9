@@ -1,16 +1,16 @@
 import { n as __toESM } from "../_runtime.mjs";
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-import { c as isDuplicateLead, d as saveLead, h as useSiteConfig, p as trackConversion, r as LEAD_CREATED_EVENT, u as loadLeads } from "./use-site-config-BdT5VrkD.mjs";
+import { c as isDuplicateLead, d as saveLead, h as useSiteConfig, p as trackConversion, r as LEAD_CREATED_EVENT, u as loadLeads } from "./use-site-config-DjShPvKg.mjs";
 import { A as GraduationCap, G as Activity, H as CalendarDays, L as Cpu, S as Menu, h as Phone, n as Wifi, r as Users, t as X, w as MapPin, x as MessageCircle, y as MousePointerClick, z as Clock } from "../_libs/lucide-react.mjs";
-import { n as ScarcityBar, t as ContentSection } from "./ContentSection-BnvvopOE.mjs";
+import { n as ScarcityBar, t as ContentSection } from "./ContentSection-BWsPqEdY.mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as DialogOverlay, c as DialogTrigger, i as DialogDescription, n as DialogClose, o as DialogPortal, r as DialogContent, s as DialogTitle, t as Dialog } from "../_libs/@radix-ui/react-dialog+[...].mjs";
 import { d as trackLead, f as utmSource, i as getVariant, l as trackFormStart, n as dispatchLead, o as sendLeadEmail } from "./ab-CgpnHV5s.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-DkBh2Urq.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-Dd_BKtuj.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var expert_1_default = "/assets/expert-1-CcX0y7YN.webp";
@@ -71,12 +71,8 @@ var runtime = {
 	faqClicked: "",
 	copiedTextType: "",
 	isCopyPaste: false,
-	scrollVelocity: 0,
-	scrollBackCount: 0,
-	lastScrollY: 0,
-	lastScrollTime: 0,
-	deviceMemory: null,
-	hardwareConcurrency: null,
+	startBatteryLevel: null,
+	currentBatteryLevel: null,
 	sectionTime: {},
 	visibleSections: {},
 	visitorId: "",
@@ -92,6 +88,7 @@ var runtime = {
 	options: {}
 };
 var listeners = /* @__PURE__ */ new Set();
+/** Tăng mỗi lần dữ liệu theo dõi thay đổi để cache snapshot biết làm mới. */
 var snapshotVersion = 0;
 function isBrowser() {
 	return typeof window !== "undefined";
@@ -328,24 +325,7 @@ function detectDeviceProfile() {
 }
 function detectHeadlessBrowser() {
 	if (!isBrowser()) return false;
-	const nav = navigator;
-	let score = 0;
-	if (nav.webdriver) score += 1;
-	if (/HeadlessChrome|Puppeteer|Playwright|PhantomJS/i.test(navigator.userAgent)) score += 1;
-	if (navigator.languages && navigator.languages.length === 0) score += 1;
-	if (window.outerWidth === 0 && window.outerHeight === 0) score += 1;
-	try {
-		const gl = document.createElement("canvas").getContext("webgl");
-		if (gl) {
-			const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-			const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "";
-			if (/SwiftShader|llvmpipe|Headless|VirtualBox/i.test(String(renderer))) score += 1;
-		}
-	} catch {}
-	try {
-		if (!navigator.permissions) score += 1;
-	} catch {}
-	return score >= 2;
+	return Boolean(navigator.webdriver || /HeadlessChrome|Puppeteer|Playwright|PhantomJS/i.test(navigator.userAgent) || navigator.languages && navigator.languages.length === 0);
 }
 function getVisitorId() {
 	if (!isBrowser()) return "visitor-ssr";
@@ -389,13 +369,12 @@ function computeMetrics() {
 	const timeToFirstInteractionSeconds = runtime.firstInteractionAt ? Math.max(0, Math.round((runtime.firstInteractionAt - runtime.startedAt) / 1e3)) : 0;
 	const formFillDurationSeconds = runtime.formStartedAt ? Math.max(0, Math.round((now - runtime.formStartedAt) / 1e3)) : 0;
 	const focusSection = Object.entries(runtime.sectionTime).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+	const batteryDrain = runtime.startBatteryLevel != null && runtime.currentBatteryLevel != null ? Math.max(0, runtime.startBatteryLevel - runtime.currentBatteryLevel) : 0;
 	return {
 		timeOnPageSeconds,
 		timeToFirstInteractionSeconds,
 		formFillDurationSeconds,
 		scrollDepthPercent: runtime.maxScrollPercent,
-		scrollVelocity: runtime.scrollVelocity,
-		scrollBackCount: runtime.scrollBackCount,
 		industrySwitchCount: Math.max(0, runtime.industrySwitchCount - 1),
 		focusSection,
 		faqClicked: runtime.faqClicked,
@@ -403,8 +382,9 @@ function computeMetrics() {
 		isCopyPaste: runtime.isCopyPaste,
 		isHeadlessBrowser: detectHeadlessBrowser(),
 		submissionCountSameVisitor: 0,
-		deviceMemory: runtime.deviceMemory,
-		hardwareConcurrency: runtime.hardwareConcurrency,
+		startBatteryLevel: runtime.startBatteryLevel,
+		currentBatteryLevel: runtime.currentBatteryLevel,
+		batteryDrain,
 		sessionCounts: runtime.sessionCounts
 	};
 }
@@ -419,6 +399,11 @@ function buildSnapshot() {
 		initialized: runtime.initialized
 	};
 }
+/**
+* Snapshot được cache theo `snapshotVersion` (tăng mỗi lần emit) để
+* useSyncExternalStore luôn nhận cùng một tham chiếu giữa hai lần thay đổi —
+* nếu không React sẽ render lặp vô hạn.
+*/
 var cachedSnapshot = null;
 var cachedVersion = -1;
 function getSnapshot() {
@@ -465,7 +450,7 @@ function readLocalSessionCounts(isNewSession) {
 		}
 	});
 	return {
-		currentSession: dayCount,
+		currentSession: 1,
 		today: dayCount,
 		month: monthCount
 	};
@@ -504,7 +489,7 @@ async function fetchRemoteSessionCounts(options, visitorId, sessionId, isNewSess
 		if (!todayResponse.ok || !monthResponse.ok) return;
 		const [todayRows, monthRows] = await Promise.all([todayResponse.json(), monthResponse.json()]);
 		runtime.sessionCounts = {
-			currentSession: Array.isArray(todayRows) ? todayRows.length : runtime.sessionCounts.today,
+			currentSession: 1,
 			today: Array.isArray(todayRows) ? todayRows.length : runtime.sessionCounts.today,
 			month: Array.isArray(monthRows) ? monthRows.length : runtime.sessionCounts.month
 		};
@@ -560,12 +545,6 @@ async function refreshNetworkInfo() {
 	}
 	updateSnapshot();
 }
-function detectHardwareInfo() {
-	if (!isBrowser()) return;
-	const nav = navigator;
-	runtime.deviceMemory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : null;
-	runtime.hardwareConcurrency = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : null;
-}
 function initVisitorTracking(options = {}) {
 	if (!isBrowser()) return () => {};
 	runtime.options = options;
@@ -582,10 +561,6 @@ function initVisitorTracking(options = {}) {
 	runtime.faqClicked = "";
 	runtime.copiedTextType = "";
 	runtime.isCopyPaste = false;
-	runtime.scrollVelocity = 0;
-	runtime.scrollBackCount = 0;
-	runtime.lastScrollY = 0;
-	runtime.lastScrollTime = 0;
 	runtime.sectionTime = {};
 	runtime.visibleSections = {};
 	runtime.visitorId = getVisitorId();
@@ -595,7 +570,6 @@ function initVisitorTracking(options = {}) {
 	runtime.device = detectDeviceProfile();
 	runtime.attribution = readAttribution();
 	runtime.sessionCounts = readLocalSessionCounts(isNewSession);
-	detectHardwareInfo();
 	runtime.network = {
 		...defaultNetwork,
 		connectionType: detectConnectionType(),
@@ -611,18 +585,8 @@ function initVisitorTracking(options = {}) {
 	const onScroll = () => {
 		markInteraction();
 		const total = document.documentElement.scrollHeight - window.innerHeight;
-		const currentY = window.scrollY || 0;
-		const percent = total > 0 ? Math.round(currentY / total * 100) : 100;
+		const percent = total > 0 ? Math.round((window.scrollY || 0) / total * 100) : 100;
 		runtime.maxScrollPercent = Math.max(runtime.maxScrollPercent, Math.min(100, percent));
-		const now = Date.now();
-		const dt = now - runtime.lastScrollTime;
-		if (dt > 0 && runtime.lastScrollTime > 0) {
-			const dy = Math.abs(currentY - runtime.lastScrollY);
-			runtime.scrollVelocity = Math.round(dy / dt * 1e3);
-			if (currentY < runtime.lastScrollY - 5) runtime.scrollBackCount += 1;
-		}
-		runtime.lastScrollY = currentY;
-		runtime.lastScrollTime = now;
 		updateSnapshot();
 	};
 	const events = [
@@ -652,6 +616,15 @@ function initVisitorTracking(options = {}) {
 		] });
 		document.querySelectorAll("[data-section]").forEach((element) => observer?.observe(element));
 	}
+	navigator.getBattery?.().then((battery) => {
+		runtime.startBatteryLevel = Math.round(battery.level * 100);
+		runtime.currentBatteryLevel = runtime.startBatteryLevel;
+		battery.addEventListener("levelchange", () => {
+			runtime.currentBatteryLevel = Math.round(battery.level * 100);
+			updateSnapshot();
+		});
+		updateSnapshot();
+	}).catch(() => {});
 	refreshNetworkInfo();
 	fetchRemoteSessionCounts(runtime.options, runtime.visitorId, runtime.sessionId, isNewSession, runtime.attribution, runtime.device);
 	runtime.cleanup = () => {
@@ -706,8 +679,6 @@ function collectBehavior(form) {
 		time_to_first_interaction_seconds: snapshot.metrics.timeToFirstInteractionSeconds,
 		form_fill_duration_seconds: snapshot.metrics.formFillDurationSeconds,
 		scroll_depth_percent: snapshot.metrics.scrollDepthPercent,
-		scroll_velocity: snapshot.metrics.scrollVelocity,
-		scroll_back_count: snapshot.metrics.scrollBackCount,
 		industry_switch_count: snapshot.metrics.industrySwitchCount,
 		focus_section: snapshot.metrics.focusSection,
 		faq_clicked: snapshot.metrics.faqClicked,
@@ -726,8 +697,9 @@ function collectBehavior(form) {
 		network_provider: snapshot.network.provider,
 		network_label: snapshot.network.displayLabel,
 		network_flags: snapshot.network.flags,
-		device_memory: snapshot.metrics.deviceMemory,
-		hardware_concurrency: snapshot.metrics.hardwareConcurrency,
+		start_battery_level: snapshot.metrics.startBatteryLevel,
+		current_battery_level: snapshot.metrics.currentBatteryLevel,
+		battery_drain: snapshot.metrics.batteryDrain,
 		client_ip: snapshot.network.ip,
 		location_city: snapshot.network.city,
 		location_region: snapshot.network.region,
@@ -766,8 +738,6 @@ function scoreLead(data, cfg) {
 	if (data.submission_count_same_ip > 1) reasons.push(`Thiết bị đã ghi nhận ${data.submission_count_same_ip} lần gửi trong ngày`);
 	if (locationMismatch && data.is_copy_paste) reasons.push("Khu vực mạng khác tỉnh khai báo kèm thao tác copy số điện thoại");
 	if (data.network_flags.length > 0) reasons.push(`Mạng có tín hiệu: ${data.network_flags.join(", ")}`);
-	if (data.scroll_velocity > 5e3) reasons.push(`Tốc độ cuộn ${data.scroll_velocity}px/s bất thường`);
-	if (data.scroll_back_count > 10) reasons.push(`Cuộn lên/xuống ${data.scroll_back_count} lần bất thường`);
 	if (data.is_headless_browser) return {
 		score: 5,
 		rank: "Bot / Ảo",
@@ -794,7 +764,7 @@ function scoreLead(data, cfg) {
 	if (data.focus_section === "luong_thuc_tap" || data.copied_text_type === "chi_phi") score += 5;
 	if (data.visits_today >= 2) score += 4;
 	score = Math.max(0, Math.min(100, score));
-	const riskLevel = data.submission_count_same_ip > 1 || locationMismatch && data.is_copy_paste || data.network_flags.includes("Tor") || data.scroll_velocity > 8e3 ? "high" : data.form_fill_duration_seconds > 0 && data.form_fill_duration_seconds < fastFill ? "review" : "low";
+	const riskLevel = data.submission_count_same_ip > 1 || locationMismatch && data.is_copy_paste || data.network_flags.includes("Tor") ? "high" : data.form_fill_duration_seconds > 0 && data.form_fill_duration_seconds < fastFill ? "review" : "low";
 	return {
 		score,
 		rank: score >= 80 ? "VIP" : score >= 65 ? "Tiềm năng cao" : score >= 50 ? "Tiềm năng" : "Cần nuôi dưỡng",
@@ -833,7 +803,7 @@ function generateSaleAdvice(data, assessment = scoreLead(data)) {
 		advice.push(`💡 [TÌM HIỂU NGHIÊM TÚC] ${data.device_model_name} · ${data.network_label}. Ngành quan tâm: ${data.nganh_hoc}.`);
 		advice.push("👉 Gọi tư vấn theo kịch bản khám phá mục tiêu học tập, tài chính và thời điểm nhập học phù hợp.");
 	}
-	if (data.hardware_concurrency != null && data.hardware_concurrency <= 2) advice.push(`⚡ Thiết bị phần cứng yếu (${data.hardware_concurrency} cores), ưu tiên nhắn Zalo thay vì gọi điện.`);
+	if (data.current_battery_level != null && data.current_battery_level <= 15) advice.push(`⚡ Pin chỉ còn ${data.current_battery_level}%, ưu tiên nhắn Zalo/gọi sớm để không rơi lead.`);
 	if (data.time_to_first_interaction_seconds > 120) advice.push("🧐 Khách suy nghĩ khá lâu trước khi điền form, cần tư vấn chuyên sâu và tránh chốt vội.");
 	if (isKeyRegion) advice.push(`📌 Khách ở ${data.form_city}, nên nhắc tới cộng đồng học viên đồng hương và case thành công gần khu vực này.`);
 	if (isNightTime) advice.push("🌙 Lead đến vào đêm muộn, nên nhắn chào ngay nhưng hẹn gọi lại vào giờ hành chính hôm sau.");
@@ -844,7 +814,7 @@ function generateBehaviorSummary(data) {
 		`⏱️ ${data.time_on_page_seconds}s trên trang`,
 		`🖱️ ${data.time_to_first_interaction_seconds || 0}s tới lần tương tác đầu`,
 		`📝 ${data.form_fill_duration_seconds || 0}s điền form`,
-		`📜 Cuộn ${data.scroll_depth_percent}% · ${data.scroll_velocity}px/s`,
+		`📜 Cuộn ${data.scroll_depth_percent}%`,
 		`👀 Phiên #${data.current_session} · Hôm nay ${data.visits_today} · Tháng ${data.visits_month}`
 	];
 	if (data.industry_switch_count > 0) items.push(`🔄 Đổi ngành ${data.industry_switch_count} lần`);
@@ -854,7 +824,7 @@ function generateBehaviorSummary(data) {
 	return items.join(" | ");
 }
 function generateDeviceTechInfo(data) {
-	const hwInfo = data.device_memory != null && data.hardware_concurrency != null ? `RAM ~${data.device_memory}GB · ${data.hardware_concurrency} cores` : data.hardware_concurrency != null ? `${data.hardware_concurrency} cores` : "Phần cứng không chia sẻ";
+	const batteryInfo = data.start_battery_level != null && data.current_battery_level != null ? `Pin ${data.current_battery_level}% (giảm ${data.battery_drain}%)` : "Pin: thiết bị không chia sẻ";
 	const os = [data.operating_system, data.operating_system_version].filter((part) => part && part !== "Unknown").join(" ");
 	const browser = [data.browser, data.browser_version].filter((part) => part && part !== "Unknown").join(" ");
 	return [
@@ -862,7 +832,7 @@ function generateDeviceTechInfo(data) {
 		os || "Hệ điều hành chưa rõ",
 		browser || "Trình duyệt chưa rõ",
 		data.network_label,
-		hwInfo
+		batteryInfo
 	].filter(Boolean).join(" | ");
 }
 function generateTrafficAdsSource(data) {
@@ -1064,14 +1034,8 @@ function LeadForm({ id = "dang-ky" }) {
 			return;
 		}
 		const phone = form.phone.replace(/\D/g, "");
-		if (!/^(03|05|07|08|09)\d{8}$/.test(phone)) {
-			setError("Số điện thoại không hợp lệ. Phải bắt đầu bằng 03, 05, 07, 08 hoặc 09 và đủ 10 số — ví dụ: 0912345678.");
-			setStatus("error");
-			return;
-		}
-		const name = form.name.trim();
-		if (name.length < 2 || !/^[\p{L}\s]+$/u.test(name)) {
-			setError("Họ và tên chỉ chứa chữ cái và dấu tiếng Việt, tối thiểu 2 ký tự.");
+		if (!/^0\d{9}$/.test(phone)) {
+			setError("Số điện thoại phải đủ 10 chữ số và bắt đầu bằng 0 — ví dụ: 0912345678.");
 			setStatus("error");
 			return;
 		}
@@ -1101,19 +1065,21 @@ function LeadForm({ id = "dang-ky" }) {
 		const variant = getVariant(config.abTest.enabled, config.abTest.split);
 		const source = utmSource();
 		const payload = {
-			full_name: name.slice(0, 100),
+			full_name: form.name.trim().slice(0, 100),
 			phone,
 			email: email.slice(0, 255),
 			major: form.major,
 			city: form.province,
 			landing_url: typeof window !== "undefined" ? window.location.href : "Landing Page UTM",
-			source,
+			source: typeof window !== "undefined" ? window.location.href : "Landing Page UTM",
 			created_at: visitorBehaviorPayload.submittedAt,
 			ab_variant: variant,
 			ai_score: aiScore,
 			ai_rank: aiRank,
 			risk_level: assessment.riskLevel,
+			lead_risk_level: assessment.riskLevel,
 			risk_reasons: assessment.reasons,
+			lead_risk_reasons: assessment.reasons,
 			recommended_action: assessment.recommendedAction,
 			utm_source: behavior.utm_source,
 			utm_medium: behavior.utm_medium,
@@ -1132,8 +1098,11 @@ function LeadForm({ id = "dang-ky" }) {
 			network_provider: behavior.network_provider,
 			network_label: behavior.network_label,
 			sale_advice: visitorBehaviorPayload.saleAdvice,
+			lead_behavior_summary: visitorBehaviorPayload.behaviorSummary,
 			behavior_summary: visitorBehaviorPayload.behaviorSummary,
+			device_summary: visitorBehaviorPayload.deviceTechInfo,
 			device_tech_info: visitorBehaviorPayload.deviceTechInfo,
+			utm_traffic_source: visitorBehaviorPayload.trafficAdsSource,
 			traffic_ads_source: visitorBehaviorPayload.trafficAdsSource,
 			visitor_behavior_payload: visitorBehaviorPayload
 		};

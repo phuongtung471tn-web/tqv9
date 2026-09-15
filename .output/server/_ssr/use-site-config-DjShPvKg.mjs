@@ -1,7 +1,7 @@
 import { n as __toESM } from "../_runtime.mjs";
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/use-site-config-BdT5VrkD.js
+//#region node_modules/.nitro/vite/services/ssr/assets/use-site-config-DjShPvKg.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var DEFAULT_CONFIG = {
@@ -686,9 +686,12 @@ async function pushLeadToSupabase(lead, url, key) {
 				risk_level: lead.riskLevel ?? null,
 				risk_reasons: lead.riskReasons ?? null,
 				recommended_action: lead.recommendedAction ?? null,
+				lead_behavior_summary: lead.behaviorSummary ?? null,
 				behavior_summary: lead.behaviorSummary ?? null,
 				sale_advice: lead.saleAdvice ?? null,
+				device_summary: lead.deviceTechInfo ?? null,
 				device_tech_info: lead.deviceTechInfo ?? null,
+				utm_traffic_source: lead.trafficAdsSource ?? null,
 				traffic_ads_source: lead.trafficAdsSource ?? null,
 				network_provider: lead.networkProvider ?? null,
 				network_label: lead.networkLabel ?? null,
