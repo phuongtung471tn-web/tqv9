@@ -272,7 +272,7 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       risk_level: assessment.riskLevel,
       risk_reasons: assessment.reasons,
       recommended_action: assessment.recommendedAction,
-      utm_source: behavior.utm_source,
+      utm_source: source,
       utm_medium: behavior.utm_medium,
       utm_campaign: behavior.utm_campaign,
       utm_content: behavior.utm_content,
@@ -333,7 +333,13 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         utmContent: payload.utm_content,
         ttclid: payload.ttclid,
         variant,
-      } as LeadRecord;
+        landing_url: payload.landing_url,
+        deviceManufacturer: payload.device_manufacturer,
+        deviceFamily: payload.device_family,
+        deviceModel: payload.device_model_name,
+        operatingSystem: payload.operating_system,
+        browser: payload.browser,
+      };
       await saveLead(leadRecord, config);
 
       // Chờ toàn bộ endpoint đã bật nhận lead trước khi xác nhận chuyển đổi.

@@ -583,110 +583,11 @@ function WebmasterModal({ onClose }: ModalProps) {
       subtitle="Pixel, tracking, xác minh Google và mã tùy chỉnh"
       onClose={onClose}
     >
-      <div className="mb-4 rounded-xl border border-neutral-200 p-3 dark:border-white/10">
-        <p className="mb-3 text-xs font-bold">Pixel & sự kiện quảng cáo</p>
-        <Field label="Facebook Pixel ID">
-          <TextInput
-            value={t.facebookPixelId}
-            onChange={(e) =>
-              update((d) => (d.tracking.facebookPixelId = e.target.value))
-            }
-          />
-        </Field>
-        <Field label="TikTok Pixel ID">
-          <TextInput
-            value={t.tiktokPixelId}
-            onChange={(e) =>
-              update((d) => (d.tracking.tiktokPixelId = e.target.value))
-            }
-          />
-        </Field>
-        <Field
-          label="TikTok Events API Access Token"
-          hint="Chỉ lưu để backend dùng; không nhúng token vào browser."
-        >
-          <TextInput
-            type="password"
-            value={t.tiktokAccessToken}
-            autoComplete="new-password"
-            onChange={(e) =>
-              update((d) => (d.tracking.tiktokAccessToken = e.target.value))
-            }
-          />
-        </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="GA4 Measurement ID">
-            <TextInput
-              value={t.ga4Id}
-              placeholder="G-XXXXXXXXXX"
-              onChange={(e) =>
-                update((d) => (d.tracking.ga4Id = e.target.value))
-              }
-            />
-          </Field>
-          <Field label="Google Tag Manager ID">
-            <TextInput
-              value={t.gtmId}
-              placeholder="GTM-XXXXXXX"
-              onChange={(e) =>
-                update((d) => (d.tracking.gtmId = e.target.value))
-              }
-            />
-          </Field>
-        </div>
-        <p className="mb-2 mt-3 text-[11px] font-semibold text-neutral-600">
-          Sự kiện được phép ghi nhận
-        </p>
-        <div className="grid gap-1 sm:grid-cols-2">
-          {(
-            [
-              ["pageView", "PageView"],
-              ["formStart", "Form Start"],
-              ["lead", "Lead"],
-              ["completeRegistration", "CompleteRegistration"],
-              ["click", "Click CTA / liên hệ"],
-              ["scroll", "Scroll depth"],
-            ] as const
-          ).map(([key, label]) => (
-            <Toggle
-              key={key}
-              checked={t.events[key] !== false}
-              onChange={(value) =>
-                update((draft) => {
-                  draft.tracking.events[key] = value;
-                })
-              }
-              label={label}
-            />
-          ))}
-        </div>
-        <p className="mt-3 text-[11px] text-neutral-400">
-          Webhook nhận UTM, hành vi form, click, scroll và trạng thái chuyển đổi
-          sau khi CRM lưu lead thành công. Dùng Webmaster làm nơi kiểm tra Pixel
-          và tracking duy nhất.
-        </p>
-        <button
-          type="button"
-          onClick={() => setLogs(fireTestEvent())}
-          className="mt-3 w-full rounded-lg bg-neutral-900 py-2.5 text-xs font-bold text-white dark:bg-white dark:text-neutral-900"
-        >
-          Kiểm tra sự kiện Pixel / Ads
-        </button>
-        {logs && (
-          <ul className="mt-3 space-y-1 text-[11px]">
-            {logs.map((log) => (
-              <li key={log.channel} className="flex gap-2">
-                <span className={log.ok ? "text-emerald-500" : "text-red-500"}>
-                  {log.ok ? "OK" : "Lỗi"}
-                </span>
-                <span>
-                  <strong>{log.channel}</strong>: {log.detail}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <p className="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] leading-relaxed text-sky-800">
+        Cấu hình Pixel, sự kiện quảng cáo và kiểm tra tracking nằm ở mục
+        <strong> Pixel &amp; Sự Kiện Ads</strong> trong toolbar. Tránh chỉnh
+        trùng lặp ở hai nơi khác nhau.
+      </p>
       <Field label="Google Search Console verification">
         <TextInput
           value={t.googleVerification}
@@ -1054,79 +955,13 @@ function WebhookModal({ onClose }: ModalProps) {
       subtitle="Gửi lead tới nhiều nơi cùng lúc"
       onClose={onClose}
     >
-      <div className="mb-4 space-y-3 rounded-xl border border-neutral-200 p-3 dark:border-white/10">
-        <p className="text-xs font-bold">Form đăng ký & UTM</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Tiêu đề form">
-            <TextInput
-              value={config.form.headline}
-              onChange={(event) =>
-                update((draft) => (draft.form.headline = event.target.value))
-              }
-            />
-          </Field>
-          <Field label="Nhãn nút gửi form">
-            <TextInput
-              value={config.form.ctaLabel}
-              onChange={(event) =>
-                update((draft) => (draft.form.ctaLabel = event.target.value))
-              }
-            />
-          </Field>
-        </div>
-        <Field
-          label="Webhook chính"
-          hint="Endpoint này vẫn được gửi cùng các endpoint đa kênh bên dưới."
-        >
-          <TextInput
-            value={config.form.webhookUrl}
-            placeholder="https://hook.make.com/..."
-            onChange={(event) =>
-              update((draft) => (draft.form.webhookUrl = event.target.value))
-            }
-          />
-        </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Giới hạn gửi">
-            <TextInput
-              type="number"
-              min="1"
-              value={config.form.rateLimitCount}
-              onChange={(event) =>
-                update(
-                  (draft) =>
-                    (draft.form.rateLimitCount = Math.max(
-                      1,
-                      Number(event.target.value) || 1,
-                    )),
-                )
-              }
-            />
-          </Field>
-          <Field label="Trong số phút">
-            <TextInput
-              type="number"
-              min="1"
-              value={config.form.rateLimitWindowMin}
-              onChange={(event) =>
-                update(
-                  (draft) =>
-                    (draft.form.rateLimitWindowMin = Math.max(
-                      1,
-                      Number(event.target.value) || 1,
-                    )),
-                )
-              }
-            />
-          </Field>
-        </div>
-        <p className="text-[11px] text-neutral-400">
-          UTM được đọc từ URL quảng cáo và gửi trong các trường
-          <span className="font-semibold"> traffic_ads_source</span>,
-          <span className="font-semibold"> utm_source</span>,
-          <span className="font-semibold"> utm_campaign</span> của lead.
-        </p>
-      </div>
+      <p className="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] leading-relaxed text-sky-800">
+        Tiêu đề form, nhãn nút CTA, webhook chính và giới hạn gửi nằm ở mục
+        <strong> Form &amp; Webhook</strong> trong toolbar. UTM được đọc tự động
+        từ URL quảng cáo và gửi trong các trường
+        <strong> traffic_ads_source</strong>, <strong>utm_source</strong>,
+        <strong> utm_campaign</strong> của lead.
+      </p>
       <div className="mb-3 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-600">
         <p className="font-bold text-neutral-800">Cách vận hành</p>
         <p className="mt-1">

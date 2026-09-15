@@ -275,7 +275,7 @@ function generateBehaviorSummary(data: BehaviorData): string {
     `⏱️ ${data.time_on_page_seconds}s trên trang`,
     `🖱️ ${data.time_to_first_interaction_seconds || 0}s tới lần tương tác đầu`,
     `📝 ${data.form_fill_duration_seconds || 0}s điền form`,
-    `📜 Cuộn ${data.scroll_depth_percent}% · ${data.scroll_velocity}px/s`,
+    `📜 Cuộn ${data.scroll_depth_percent}% · Tốc độ tối đa ${data.max_scroll_velocity}px/s`,
     `👀 Phiên #${data.current_session} · Hôm nay ${data.visits_today} · Tháng ${data.visits_month}`,
   ];
   if (data.industry_switch_count > 0)

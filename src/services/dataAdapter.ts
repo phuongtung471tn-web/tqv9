@@ -284,10 +284,14 @@ export async function isDuplicateLeadRemote(
         Authorization: `Bearer ${config.admin.supabaseAnonKey}`,
       },
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      console.warn(`isDuplicateLeadRemote: Supabase returned ${res.status}`);
+      return false;
+    }
     const rows = (await res.json()) as unknown[];
     return Array.isArray(rows) && rows.length > 0;
-  } catch {
+  } catch (err) {
+    console.warn("isDuplicateLeadRemote: network error, allowing submit", (err as Error).message);
     return false;
   }
 }
@@ -372,12 +376,12 @@ async function pushLeadToSupabase(
           utm_content: lead.utmContent ?? null,
           ttclid: lead.ttclid ?? null,
           variant: lead.variant ?? null,
-          landing_url: (lead as Record<string, unknown>).landing_url ?? null,
-          device_manufacturer: (lead as Record<string, unknown>).deviceManufacturer ?? null,
-          device_family: (lead as Record<string, unknown>).deviceFamily ?? null,
-          device_model: (lead as Record<string, unknown>).deviceModel ?? null,
-          operating_system: (lead as Record<string, unknown>).operatingSystem ?? null,
-          browser: (lead as Record<string, unknown>).browser ?? null,
+          landing_url: lead.landing_url ?? null,
+          device_manufacturer: lead.deviceManufacturer ?? null,
+          device_family: lead.deviceFamily ?? null,
+          device_model: lead.deviceModel ?? null,
+          operating_system: lead.operatingSystem ?? null,
+          browser: lead.browser ?? null,
           visitor_behavior_payload: lead.visitorBehaviorPayload ?? null,
           created_at: lead.at,
           },
@@ -418,6 +422,12 @@ export function exportLeadsCsv(leads: LeadRecord[]): void {
     "utmContent",
     "ttclid",
     "variant",
+    "landing_url",
+    "deviceManufacturer",
+    "deviceFamily",
+    "deviceModel",
+    "operatingSystem",
+    "browser",
   ];
   const rows = leads.map((l) =>
     headers

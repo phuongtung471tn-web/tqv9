@@ -635,9 +635,7 @@ async function fetchRemoteSessionCounts(
     ])) as [{ id: string }[], { id: string }[]];
 
     runtime.sessionCounts = {
-      currentSession: Array.isArray(monthRows)
-        ? monthRows.length
-        : runtime.sessionCounts.currentSession,
+      currentSession: runtime.sessionCounts.currentSession,
       today: Array.isArray(todayRows)
         ? todayRows.length
         : runtime.sessionCounts.today,
