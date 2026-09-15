@@ -86,6 +86,12 @@ function scoreLead(
   if (data.network_flags.length > 0) {
     reasons.push(`Mạng có tín hiệu: ${data.network_flags.join(", ")}`);
   }
+  if (data.scroll_velocity > 5000) {
+    reasons.push(`Tốc độ cuộn ${data.scroll_velocity}px/s bất thường`);
+  }
+  if (data.scroll_back_count > 10) {
+    reasons.push(`Cuộn lên/xuống ${data.scroll_back_count} lần bất thường`);
+  }
 
   if (data.is_headless_browser) {
     return {
@@ -131,7 +137,8 @@ function scoreLead(
   const riskLevel: LeadRiskLevel =
     data.submission_count_same_ip > 1 ||
     (locationMismatch && data.is_copy_paste) ||
-    data.network_flags.includes("Tor")
+    data.network_flags.includes("Tor") ||
+    data.scroll_velocity > 8000
       ? "high"
       : data.form_fill_duration_seconds > 0 &&
           data.form_fill_duration_seconds < fastFill
@@ -239,9 +246,9 @@ function generateSaleAdvice(
     );
   }
 
-  if (data.current_battery_level != null && data.current_battery_level <= 15) {
+  if (data.hardware_concurrency != null && data.hardware_concurrency <= 2) {
     advice.push(
-      `⚡ Pin chỉ còn ${data.current_battery_level}%, ưu tiên nhắn Zalo/gọi sớm để không rơi lead.`,
+      `⚡ Thiết bị phần cứng yếu (${data.hardware_concurrency} cores), ưu tiên nhắn Zalo thay vì gọi điện.`,
     );
   }
   if (data.time_to_first_interaction_seconds > 120) {
@@ -268,7 +275,7 @@ function generateBehaviorSummary(data: BehaviorData): string {
     `⏱️ ${data.time_on_page_seconds}s trên trang`,
     `🖱️ ${data.time_to_first_interaction_seconds || 0}s tới lần tương tác đầu`,
     `📝 ${data.form_fill_duration_seconds || 0}s điền form`,
-    `📜 Cuộn ${data.scroll_depth_percent}%`,
+    `📜 Cuộn ${data.scroll_depth_percent}% · ${data.scroll_velocity}px/s`,
     `👀 Phiên #${data.current_session} · Hôm nay ${data.visits_today} · Tháng ${data.visits_month}`,
   ];
   if (data.industry_switch_count > 0)
@@ -280,10 +287,12 @@ function generateBehaviorSummary(data: BehaviorData): string {
 }
 
 function generateDeviceTechInfo(data: BehaviorData): string {
-  const batteryInfo =
-    data.start_battery_level != null && data.current_battery_level != null
-      ? `Pin ${data.current_battery_level}% (giảm ${data.battery_drain}%)`
-      : "Pin: thiết bị không chia sẻ";
+  const hwInfo =
+    data.device_memory != null && data.hardware_concurrency != null
+      ? `RAM ~${data.device_memory}GB · ${data.hardware_concurrency} cores`
+      : data.hardware_concurrency != null
+        ? `${data.hardware_concurrency} cores`
+        : "Phần cứng không chia sẻ";
   const os = [data.operating_system, data.operating_system_version]
     .filter((part) => part && part !== "Unknown")
     .join(" ");
@@ -298,7 +307,7 @@ function generateDeviceTechInfo(data: BehaviorData): string {
     os || "Hệ điều hành chưa rõ",
     browser || "Trình duyệt chưa rõ",
     data.network_label,
-    batteryInfo,
+    hwInfo,
   ]
     .filter(Boolean)
     .join(" | ");

@@ -5,7 +5,7 @@ export type LeadRiskLevel = "low" | "review" | "high" | "unrated";
 /** Nguồn lưu trữ duy nhất: dùng chung StorageMode của cấu hình site. */
 export type TrackingStorageMode = StorageMode;
 export type LookupStatus =
-  "idle" | "loading" | "resolved" | "fallback" | "error";
+  | "idle" | "loading" | "resolved" | "fallback" | "error";
 
 export interface DeviceProfile {
   userAgent: string;
@@ -59,6 +59,8 @@ export interface VisitorMetrics {
   timeToFirstInteractionSeconds: number;
   formFillDurationSeconds: number;
   scrollDepthPercent: number;
+  scrollVelocity: number;
+  scrollBackCount: number;
   industrySwitchCount: number;
   focusSection: string;
   faqClicked: string;
@@ -66,9 +68,8 @@ export interface VisitorMetrics {
   isCopyPaste: boolean;
   isHeadlessBrowser: boolean;
   submissionCountSameVisitor: number;
-  startBatteryLevel: number | null;
-  currentBatteryLevel: number | null;
-  batteryDrain: number;
+  deviceMemory: number | null;
+  hardwareConcurrency: number | null;
   sessionCounts: VisitorSessionCounts;
 }
 
@@ -87,6 +88,8 @@ export interface BehaviorData {
   time_to_first_interaction_seconds: number;
   form_fill_duration_seconds: number;
   scroll_depth_percent: number;
+  scroll_velocity: number;
+  scroll_back_count: number;
   industry_switch_count: number;
   focus_section: string;
   faq_clicked: string;
@@ -105,9 +108,8 @@ export interface BehaviorData {
   network_provider: string;
   network_label: string;
   network_flags: string[];
-  start_battery_level: number | null;
-  current_battery_level: number | null;
-  battery_drain: number;
+  device_memory: number | null;
+  hardware_concurrency: number | null;
   client_ip: string;
   location_city: string;
   location_region: string;

@@ -36,8 +36,12 @@ type RuntimeState = {
   faqClicked: string;
   copiedTextType: string;
   isCopyPaste: boolean;
-  startBatteryLevel: number | null;
-  currentBatteryLevel: number | null;
+  scrollVelocity: number;
+  scrollBackCount: number;
+  lastScrollY: number;
+  lastScrollTime: number;
+  deviceMemory: number | null;
+  hardwareConcurrency: number | null;
   sectionTime: Record<string, number>;
   visibleSections: Record<string, number>;
   visitorId: string;
@@ -101,8 +105,12 @@ const runtime: RuntimeState = {
   faqClicked: "",
   copiedTextType: "",
   isCopyPaste: false,
-  startBatteryLevel: null,
-  currentBatteryLevel: null,
+  scrollVelocity: 0,
+  scrollBackCount: 0,
+  lastScrollY: 0,
+  lastScrollTime: 0,
+  deviceMemory: null,
+  hardwareConcurrency: null,
   sectionTime: {},
   visibleSections: {},
   visitorId: "",
@@ -115,7 +123,6 @@ const runtime: RuntimeState = {
 };
 
 const listeners = new Set<() => void>();
-/** Tăng mỗi lần dữ liệu theo dõi thay đổi để cache snapshot biết làm mới. */
 let snapshotVersion = 0;
 
 function isBrowser() {
@@ -383,13 +390,33 @@ function detectDeviceProfile(): DeviceProfile {
 function detectHeadlessBrowser() {
   if (!isBrowser()) return false;
   const nav = navigator as Navigator & { webdriver?: boolean };
-  return Boolean(
-    nav.webdriver ||
-    /HeadlessChrome|Puppeteer|Playwright|PhantomJS/i.test(
-      navigator.userAgent,
-    ) ||
-    (navigator.languages && navigator.languages.length === 0),
-  );
+  let score = 0;
+  if (nav.webdriver) score += 1;
+  if (/HeadlessChrome|Puppeteer|Playwright|PhantomJS/i.test(navigator.userAgent))
+    score += 1;
+  if (navigator.languages && navigator.languages.length === 0) score += 1;
+  if (window.outerWidth === 0 && window.outerHeight === 0) score += 1;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl");
+    if (gl) {
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      const renderer = debugInfo
+        ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+        : "";
+      if (/SwiftShader|llvmpipe|Headless|VirtualBox/i.test(String(renderer)))
+        score += 1;
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (!(navigator as Navigator & { permissions?: unknown }).permissions)
+      score += 1;
+  } catch {
+    /* ignore */
+  }
+  return score >= 2;
 }
 
 function getVisitorId() {
@@ -449,16 +476,14 @@ function computeMetrics(): VisitorMetrics {
   const focusSection =
     Object.entries(runtime.sectionTime).sort((a, b) => b[1] - a[1])[0]?.[0] ||
     "";
-  const batteryDrain =
-    runtime.startBatteryLevel != null && runtime.currentBatteryLevel != null
-      ? Math.max(0, runtime.startBatteryLevel - runtime.currentBatteryLevel)
-      : 0;
 
   return {
     timeOnPageSeconds,
     timeToFirstInteractionSeconds,
     formFillDurationSeconds,
     scrollDepthPercent: runtime.maxScrollPercent,
+    scrollVelocity: runtime.scrollVelocity,
+    scrollBackCount: runtime.scrollBackCount,
     industrySwitchCount: Math.max(0, runtime.industrySwitchCount - 1),
     focusSection,
     faqClicked: runtime.faqClicked,
@@ -466,9 +491,8 @@ function computeMetrics(): VisitorMetrics {
     isCopyPaste: runtime.isCopyPaste,
     isHeadlessBrowser: detectHeadlessBrowser(),
     submissionCountSameVisitor: 0,
-    startBatteryLevel: runtime.startBatteryLevel,
-    currentBatteryLevel: runtime.currentBatteryLevel,
-    batteryDrain,
+    deviceMemory: runtime.deviceMemory,
+    hardwareConcurrency: runtime.hardwareConcurrency,
     sessionCounts: runtime.sessionCounts,
   };
 }
@@ -485,11 +509,6 @@ function buildSnapshot(): TrackingSnapshot {
   };
 }
 
-/**
- * Snapshot được cache theo `snapshotVersion` (tăng mỗi lần emit) để
- * useSyncExternalStore luôn nhận cùng một tham chiếu giữa hai lần thay đổi —
- * nếu không React sẽ render lặp vô hạn.
- */
 let cachedSnapshot: TrackingSnapshot | null = null;
 let cachedVersion = -1;
 
@@ -535,7 +554,7 @@ function readLocalSessionCounts(isNewSession: boolean): VisitorSessionCounts {
     month: { key: monthKey(), count: monthCount },
   });
 
-  return { currentSession: 1, today: dayCount, month: monthCount };
+  return { currentSession: dayCount, today: dayCount, month: monthCount };
 }
 
 async function fetchRemoteSessionCounts(
@@ -607,7 +626,9 @@ async function fetchRemoteSessionCounts(
     ])) as [{ id: string }[], { id: string }[]];
 
     runtime.sessionCounts = {
-      currentSession: 1,
+      currentSession: Array.isArray(todayRows)
+        ? todayRows.length
+        : runtime.sessionCounts.today,
       today: Array.isArray(todayRows)
         ? todayRows.length
         : runtime.sessionCounts.today,
@@ -692,6 +713,17 @@ async function refreshNetworkInfo() {
   updateSnapshot();
 }
 
+function detectHardwareInfo() {
+  if (!isBrowser()) return;
+  const nav = navigator as Navigator & {
+    deviceMemory?: number;
+    hardwareConcurrency?: number;
+  };
+  runtime.deviceMemory = typeof nav.deviceMemory === "number" ? nav.deviceMemory : null;
+  runtime.hardwareConcurrency =
+    typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : null;
+}
+
 export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
   if (!isBrowser()) return () => {};
   runtime.options = options;
@@ -716,6 +748,10 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
   runtime.faqClicked = "";
   runtime.copiedTextType = "";
   runtime.isCopyPaste = false;
+  runtime.scrollVelocity = 0;
+  runtime.scrollBackCount = 0;
+  runtime.lastScrollY = 0;
+  runtime.lastScrollTime = 0;
   runtime.sectionTime = {};
   runtime.visibleSections = {};
   runtime.visitorId = getVisitorId();
@@ -725,6 +761,7 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
   runtime.device = detectDeviceProfile();
   runtime.attribution = readAttribution();
   runtime.sessionCounts = readLocalSessionCounts(isNewSession);
+  detectHardwareInfo();
   runtime.network = {
     ...defaultNetwork,
     connectionType: detectConnectionType(),
@@ -742,12 +779,24 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
     markInteraction();
     const doc = document.documentElement;
     const total = doc.scrollHeight - window.innerHeight;
+    const currentY = window.scrollY || 0;
     const percent =
-      total > 0 ? Math.round(((window.scrollY || 0) / total) * 100) : 100;
+      total > 0 ? Math.round((currentY / total) * 100) : 100;
     runtime.maxScrollPercent = Math.max(
       runtime.maxScrollPercent,
       Math.min(100, percent),
     );
+    const now = Date.now();
+    const dt = now - runtime.lastScrollTime;
+    if (dt > 0 && runtime.lastScrollTime > 0) {
+      const dy = Math.abs(currentY - runtime.lastScrollY);
+      runtime.scrollVelocity = Math.round(dy / dt * 1000);
+      if (currentY < runtime.lastScrollY - 5) {
+        runtime.scrollBackCount += 1;
+      }
+    }
+    runtime.lastScrollY = currentY;
+    runtime.lastScrollTime = now;
     updateSnapshot();
   };
   const events: Array<[keyof WindowEventMap, EventListener]> = [
@@ -767,8 +816,6 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
         runtime.sectionTime[name] = (runtime.sectionTime[name] || 0) + 1;
       }
     });
-    // Heartbeat: refresh the snapshot so live metrics (time on page,
-    // focus section) update in real time even without user interaction.
     updateSnapshot();
   }, 1000);
 
@@ -790,25 +837,6 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
       .forEach((element) => observer?.observe(element));
   }
 
-  const nav = navigator as Navigator & {
-    getBattery?: () => Promise<{
-      level: number;
-      addEventListener: (type: string, listener: () => void) => void;
-    }>;
-  };
-  nav
-    .getBattery?.()
-    .then((battery) => {
-      runtime.startBatteryLevel = Math.round(battery.level * 100);
-      runtime.currentBatteryLevel = runtime.startBatteryLevel;
-      battery.addEventListener("levelchange", () => {
-        runtime.currentBatteryLevel = Math.round(battery.level * 100);
-        updateSnapshot();
-      });
-      updateSnapshot();
-    })
-    .catch(() => {});
-
   void refreshNetworkInfo();
   void fetchRemoteSessionCounts(
     runtime.options,
@@ -825,8 +853,6 @@ export function initVisitorTracking(options: VisitorTrackingInitOptions = {}) {
     );
     window.clearInterval(tick);
     observer?.disconnect();
-    // Reset so a later init (config change / remount) fully rebuilds the
-    // listeners and heartbeat instead of hitting the early-return path.
     runtime.initialized = false;
     runtime.cleanup = undefined;
   };
@@ -913,6 +939,8 @@ export function collectBehavior(form: {
       snapshot.metrics.timeToFirstInteractionSeconds,
     form_fill_duration_seconds: snapshot.metrics.formFillDurationSeconds,
     scroll_depth_percent: snapshot.metrics.scrollDepthPercent,
+    scroll_velocity: snapshot.metrics.scrollVelocity,
+    scroll_back_count: snapshot.metrics.scrollBackCount,
     industry_switch_count: snapshot.metrics.industrySwitchCount,
     focus_section: snapshot.metrics.focusSection,
     faq_clicked: snapshot.metrics.faqClicked,
@@ -931,9 +959,8 @@ export function collectBehavior(form: {
     network_provider: snapshot.network.provider,
     network_label: snapshot.network.displayLabel,
     network_flags: snapshot.network.flags,
-    start_battery_level: snapshot.metrics.startBatteryLevel,
-    current_battery_level: snapshot.metrics.currentBatteryLevel,
-    battery_drain: snapshot.metrics.batteryDrain,
+    device_memory: snapshot.metrics.deviceMemory,
+    hardware_concurrency: snapshot.metrics.hardwareConcurrency,
     client_ip: snapshot.network.ip,
     location_city: snapshot.network.city,
     location_region: snapshot.network.region,

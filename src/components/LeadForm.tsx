@@ -189,9 +189,17 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
     }
 
     const phone = form.phone.replace(/\D/g, "");
-    if (!/^0\d{9}$/.test(phone)) {
+    if (!/^(03|05|07|08|09)\d{8}$/.test(phone)) {
       setError(
-        "Số điện thoại phải đủ 10 chữ số và bắt đầu bằng 0 — ví dụ: 0912345678.",
+        "Số điện thoại không hợp lệ. Phải bắt đầu bằng 03, 05, 07, 08 hoặc 09 và đủ 10 số — ví dụ: 0912345678.",
+      );
+      setStatus("error");
+      return;
+    }
+    const name = form.name.trim();
+    if (name.length < 2 || !/^[\p{L}\s]+$/u.test(name)) {
+      setError(
+        "Họ và tên chỉ chứa chữ cái và dấu tiếng Việt, tối thiểu 2 ký tự.",
       );
       setStatus("error");
       return;
@@ -237,7 +245,7 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
     const source = utmSource();
 
     const payload = {
-      full_name: form.name.trim().slice(0, 100),
+      full_name: name.slice(0, 100),
       phone,
       email: email.slice(0, 255),
       major: form.major,
@@ -246,18 +254,13 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         typeof window !== "undefined"
           ? window.location.href
           : "Landing Page UTM",
-      source:
-        typeof window !== "undefined"
-          ? window.location.href
-          : "Landing Page UTM",
+      source,
       created_at: visitorBehaviorPayload.submittedAt,
       ab_variant: variant,
       ai_score: aiScore,
       ai_rank: aiRank,
       risk_level: assessment.riskLevel,
-      lead_risk_level: assessment.riskLevel,
       risk_reasons: assessment.reasons,
-      lead_risk_reasons: assessment.reasons,
       recommended_action: assessment.recommendedAction,
       utm_source: behavior.utm_source,
       utm_medium: behavior.utm_medium,
@@ -283,11 +286,8 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       network_provider: behavior.network_provider,
       network_label: behavior.network_label,
       sale_advice: visitorBehaviorPayload.saleAdvice,
-      lead_behavior_summary: visitorBehaviorPayload.behaviorSummary,
       behavior_summary: visitorBehaviorPayload.behaviorSummary,
-      device_summary: visitorBehaviorPayload.deviceTechInfo,
       device_tech_info: visitorBehaviorPayload.deviceTechInfo,
-      utm_traffic_source: visitorBehaviorPayload.trafficAdsSource,
       traffic_ads_source: visitorBehaviorPayload.trafficAdsSource,
       visitor_behavior_payload: visitorBehaviorPayload,
     };
