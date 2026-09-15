@@ -1,7 +1,7 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-CGUZmvoE.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DqjbKyTr.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
-		filePath: "/home/project/src/routes/__root.tsx",
+		filePath: "/workspaces/hello-world-tao/src/routes/__root.tsx",
 		children: [
 			"/",
 			"/$",
@@ -15,12 +15,12 @@ var tsrStartManifest = () => ({ routes: {
 		} }]
 	},
 	"/": {
-		filePath: "/home/project/src/routes/index.tsx",
+		filePath: "/workspaces/hello-world-tao/src/routes/index.tsx",
 		children: void 0,
 		preloads: ["/assets/routes-kITlb1Vu.js", "/assets/ContentSection-DCyvKQnb.js"]
 	},
 	"/$": {
-		filePath: "/home/project/src/routes/$.tsx",
+		filePath: "/workspaces/hello-world-tao/src/routes/$.tsx",
 		children: void 0,
 		preloads: [
 			"/assets/_-Dg2DwA0x.js",
@@ -29,7 +29,7 @@ var tsrStartManifest = () => ({ routes: {
 		]
 	},
 	"/admin": {
-		filePath: "/home/project/src/routes/admin.tsx",
+		filePath: "/workspaces/hello-world-tao/src/routes/admin.tsx",
 		children: void 0,
 		preloads: ["/assets/admin-ZjssL_Ot.js", "/assets/AdminLoginPage-DQVfl5Ck.js"]
 	}
