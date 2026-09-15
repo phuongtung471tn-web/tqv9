@@ -1,7 +1,7 @@
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-import { h as useSiteConfig } from "./use-site-config-DjShPvKg.mjs";
-import { t as AdminLoginPage } from "./AdminLoginPage-BIGPYb0o.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-D7fBVljC.js
+import { h as useSiteConfig } from "./use-site-config-BdT5VrkD.mjs";
+import { t as AdminLoginPage } from "./AdminLoginPage-DWmH7nyK.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-Dfv8ILMh.js
 var import_jsx_runtime = require_jsx_runtime();
 function AdminRoute() {
 	const { config } = useSiteConfig();
