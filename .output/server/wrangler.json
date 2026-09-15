@@ -1,0 +1,22 @@
+{
+  "compatibility_date": "2026-09-15",
+  "main": "index.mjs",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "../public"
+  },
+  "name": "phuongtung477tn-dotcom-hello-world-tao",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": [
+        "**/*.mjs",
+        "**/*.js"
+      ]
+    }
+  ]
+}

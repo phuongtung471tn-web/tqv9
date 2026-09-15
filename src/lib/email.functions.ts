@@ -1,0 +1,113 @@
+/**
+ * AUTOMATED EMAIL SEQUENCER (auto-responder).
+ * Gửi email cảm ơn ngay sau khi khách đăng ký. Chạy phía server để
+ * API key không lộ ra trình duyệt: thêm secret RESEND_API_KEY.
+ */
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const schema = z.object({
+  provider: z.enum(["resend", "gmail"]).default("resend"),
+  to: z.string().email(),
+  from: z.string().email(),
+  subject: z.string().min(1),
+  text: z.string().min(1),
+});
+
+export const checkEmailConfig = createServerFn({ method: "GET" }).handler(
+  () => ({
+    resendConfigured: Boolean(process.env["RESEND_API_KEY"]),
+    gmailConfigured: Boolean(
+      process.env["GMAIL_CLIENT_ID"] &&
+      process.env["GMAIL_CLIENT_SECRET"] &&
+      process.env["GMAIL_REFRESH_TOKEN"],
+    ),
+  }),
+);
+
+async function sendWithGmail(data: z.infer<typeof schema>) {
+  const clientId = process.env["GMAIL_CLIENT_ID"];
+  const clientSecret = process.env["GMAIL_CLIENT_SECRET"];
+  const refreshToken = process.env["GMAIL_REFRESH_TOKEN"];
+  if (!clientId || !clientSecret || !refreshToken)
+    return { sent: false as const, reason: "missing_gmail_secrets" as const };
+
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  if (!tokenResponse.ok)
+    return { sent: false as const, reason: "gmail_token_error" as const };
+  const token = (await tokenResponse.json()) as { access_token?: string };
+  if (!token.access_token)
+    return { sent: false as const, reason: "gmail_token_error" as const };
+
+  const raw = [
+    `From: ${data.from}`,
+    `To: ${data.to}`,
+    `Subject: ${data.subject}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "",
+    data.text,
+  ].join("\r\n");
+  const encoded = btoa(unescape(encodeURIComponent(raw)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+  const response = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ raw: encoded }),
+    },
+  );
+  return response.ok
+    ? { sent: true as const }
+    : { sent: false as const, reason: "gmail_send_error" as const };
+}
+
+export const sendLeadEmail = createServerFn({ method: "POST" })
+  .validator((data) => schema.parse(data))
+  .handler(async ({ data }) => {
+    if (data.provider === "gmail") return sendWithGmail(data);
+    const apiKey = process.env["RESEND_API_KEY"];
+    if (!apiKey) return { sent: false, reason: "missing_api_key" as const };
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: data.from,
+        to: [data.to],
+        subject: data.subject,
+        text: data.text,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error(`Resend failed [${res.status}]: ${detail}`);
+      return {
+        sent: false,
+        reason: "provider_error" as const,
+        status: res.status,
+      };
+    }
+    return { sent: true as const };
+  });
+
+export const sendTestEmail = createServerFn({ method: "POST" })
+  .validator((data) => schema.parse(data))
+  .handler(async ({ data }) => sendLeadEmail({ data }));
