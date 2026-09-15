@@ -1,11 +1,11 @@
 {
-  "compatibility_date": "2026-09-16",
+  "compatibility_date": "2026-09-15",
   "main": "index.mjs",
   "assets": {
     "binding": "ASSETS",
     "directory": "../public"
   },
-  "name": "tanstack-start-ts",
+  "name": "phuongtung477tn-dotcom-hello-world-tao",
   "compatibility_flags": [
     "nodejs_compat"
   ],
