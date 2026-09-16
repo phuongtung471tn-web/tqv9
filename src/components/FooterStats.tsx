@@ -1,35 +1,11 @@
 import {
-  Activity,
   CalendarDays,
   Clock,
-  Cpu,
-  MapPin,
   MousePointerClick,
   Users,
-  Wifi,
 } from "lucide-react";
 
 import { useVisitorTrackingSnapshot } from "@/lib/visitor-tracking";
-
-interface FooterStatsProps {
-  title?: string;
-  helperText?: string;
-}
-
-/** Bỏ các phần trùng lặp (ví dụ model = hệ điều hành) để không hiển thị "Linux · Linux". */
-function dedupeParts(parts: Array<string | undefined>) {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const raw of parts) {
-    const value = (raw || "").trim();
-    if (!value) continue;
-    const key = value.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(value);
-  }
-  return result;
-}
 
 function formatDuration(totalSeconds: number) {
   const safe = Math.max(0, Math.round(totalSeconds));
@@ -39,26 +15,13 @@ function formatDuration(totalSeconds: number) {
 }
 
 export function FooterStats({
-  title = "Thống kê truy cập thông minh",
-  helperText = "Dữ liệu truy cập được gom từ cùng một kho tracking để đồng bộ giữa Analytics, Mini-CRM và Webhook.",
-}: FooterStatsProps) {
+  title = "Thống kê truy cập",
+  helperText = "Số liệu truy cập được gom chung để đồng bộ giữa Analytics, CRM và webhook.",
+}: {
+  title?: string;
+  helperText?: string;
+}) {
   const snapshot = useVisitorTrackingSnapshot();
-
-  const deviceValue =
-    dedupeParts([
-      snapshot.device.manufacturer !== "Unknown"
-        ? snapshot.device.manufacturer
-        : "",
-      snapshot.device.model !== "Unknown" ? snapshot.device.model : "",
-      snapshot.device.os !== "Unknown" ? snapshot.device.os : "",
-      snapshot.device.browser !== "Unknown" ? snapshot.device.browser : "",
-    ]).join(" · ") || "Thiết bị chưa nhận diện";
-
-  const networkValue =
-    snapshot.network.displayLabel &&
-    !snapshot.network.displayLabel.toLowerCase().includes("unknown")
-      ? snapshot.network.displayLabel
-      : snapshot.network.fallbackLabel || "Mạng băng thông rộng · Việt Nam";
 
   const quickStats = [
     {
@@ -77,39 +40,13 @@ export function FooterStats({
       icon: Clock,
       label: "Thời gian trên trang",
       value: formatDuration(snapshot.metrics.timeOnPageSeconds),
-      hint: "Phút:giây · trực tiếp",
+      hint: "Phút:giây",
     },
     {
       icon: MousePointerClick,
-      label: "Độ sâu cuộn trang",
+      label: "Độ sâu cuộn",
       value: `${Math.min(100, Math.max(0, snapshot.metrics.scrollDepthPercent))}%`,
-      hint: "Mức đã xem · trực tiếp",
-    },
-  ];
-
-  const detailStats = [
-    {
-      icon: Activity,
-      label: "Phiên hiện tại",
-      value: `Phiên #${snapshot.metrics.sessionCounts.currentSession}`,
-      sub: `Mã khách: ${snapshot.visitorId.slice(-6).toUpperCase()}`,
-    },
-    {
-      icon: Cpu,
-      label: "Thiết bị nhận diện",
-      value: deviceValue,
-      sub: snapshot.device.isInAppBrowser
-        ? "Trình duyệt trong ứng dụng"
-        : "Trình duyệt độc lập",
-    },
-    {
-      icon: Wifi,
-      label: "Mạng & khu vực",
-      value: networkValue,
-      sub:
-        snapshot.network.flags.length > 0
-          ? `Tín hiệu: ${snapshot.network.flags.join(", ")}`
-          : snapshot.network.connectionLabel || "Kết nối ổn định",
+      hint: "Mức đã xem",
     },
   ];
 
@@ -156,33 +93,6 @@ export function FooterStats({
           </div>
         ))}
       </div>
-
-      <dl className="grid gap-px border-t border-border/60 bg-border/60 sm:grid-cols-3">
-        {detailStats.map((item) => (
-          <div key={item.label} className="min-w-0 bg-card px-4 py-3 sm:px-5 sm:py-4">
-            <dt className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[11px]">
-              <item.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              {item.label}
-            </dt>
-            <dd
-              className="mt-1.5 break-words text-xs font-bold leading-snug text-foreground sm:text-sm"
-              title={item.value}
-            >
-              {item.value}
-            </dd>
-            <p className="mt-1 break-words text-[10px] leading-relaxed text-muted-foreground sm:text-[11px]">
-              {item.sub}
-            </p>
-          </div>
-        ))}
-      </dl>
-
-      <p className="flex items-start gap-1.5 border-t border-border/60 px-5 py-3 text-[11px] leading-relaxed text-muted-foreground sm:px-6 sm:text-xs">
-        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        {snapshot.network.lookupStatus === "resolved"
-          ? `Nhà mạng hiện tại: ${snapshot.network.provider || snapshot.network.connectionLabel}. Khi dịch vụ IP thiếu dữ liệu, hệ thống tự chuyển sang chuỗi mạng thay thế để không hiển thị lỗi.`
-          : "Dịch vụ định vị IP đang dùng cơ chế dự phòng; giao diện vẫn hiển thị chuỗi mạng chuyên nghiệp, không lộ lỗi hệ thống."}
-      </p>
     </aside>
   );
 }

@@ -29,9 +29,7 @@ export type AdminModalKey =
   | "ai"
   | "contact"
   | "countdown"
-  | "adminlink"
-  | "tracking"
-  | "preview";
+  | "adminlink";
 
 const AUTH_KEY = "funnel_admin_authed_v1";
 

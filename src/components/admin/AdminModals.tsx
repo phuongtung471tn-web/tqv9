@@ -979,6 +979,8 @@ function WebhookModal({ onClose }: ModalProps) {
         <p className="mb-3 text-[11px] text-neutral-500">
           AI dùng hành vi tracking đã thu thập để chấm điểm, phân loại và gợi ý
           cách gọi. Kết quả được gửi cùng payload webhook và lưu trong Mini-CRM.
+          Cấu hình chi tiết (regex VIP, tỉnh trọng điểm, ngưỡng) nằm ở mục
+          <strong> AI Sales Advisor</strong> trong toolbar.
         </p>
         <Toggle
           checked={config.aiAdvisor.enabled}
@@ -987,83 +989,6 @@ function WebhookModal({ onClose }: ModalProps) {
           }
           label="Bật AI Sales Advisor"
         />
-        {config.aiAdvisor.enabled && (
-          <div className="mt-3 space-y-3">
-            <Field label="Regex thiết bị ưu tiên">
-              <TextInput
-                value={config.aiAdvisor.vipDeviceRegex}
-                onChange={(event) =>
-                  update(
-                    (draft) =>
-                      (draft.aiAdvisor.vipDeviceRegex = event.target.value),
-                  )
-                }
-              />
-            </Field>
-            <Field label="Tỉnh trọng điểm, phân tách bằng |">
-              <TextInput
-                value={config.aiAdvisor.keyRegions}
-                onChange={(event) =>
-                  update(
-                    (draft) =>
-                      (draft.aiAdvisor.keyRegions = event.target.value),
-                  )
-                }
-              />
-            </Field>
-            <div className="grid grid-cols-3 gap-2">
-              <Field label="Điền nhanh (s)">
-                <TextInput
-                  type="number"
-                  min="1"
-                  value={config.aiAdvisor.fastFillThresholdSec}
-                  onChange={(event) =>
-                    update(
-                      (draft) =>
-                        (draft.aiAdvisor.fastFillThresholdSec = Math.max(
-                          1,
-                          Number(event.target.value) || 1,
-                        )),
-                    )
-                  }
-                />
-              </Field>
-              <Field label="VIP: thời gian (s)">
-                <TextInput
-                  type="number"
-                  min="1"
-                  value={config.aiAdvisor.vipTimeOnPageSec}
-                  onChange={(event) =>
-                    update(
-                      (draft) =>
-                        (draft.aiAdvisor.vipTimeOnPageSec = Math.max(
-                          1,
-                          Number(event.target.value) || 1,
-                        )),
-                    )
-                  }
-                />
-              </Field>
-              <Field label="VIP: cuộn (%)">
-                <TextInput
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={config.aiAdvisor.vipScrollPercent}
-                  onChange={(event) =>
-                    update(
-                      (draft) =>
-                        (draft.aiAdvisor.vipScrollPercent = Math.min(
-                          100,
-                          Math.max(1, Number(event.target.value) || 1),
-                        )),
-                    )
-                  }
-                />
-              </Field>
-            </div>
-          </div>
-        )}
       </div>
       {list.length === 0 && (
         <p className="mb-3 text-xs text-neutral-400">
@@ -1790,30 +1715,6 @@ function CronModal({ onClose }: ModalProps) {
         bản gần nhất).
       </p>
       <SaveHint />
-    </AdminModal>
-  );
-}
-
-/* --------------------------- INFO PANELS ---------------------------------- */
-function InfoModal({
-  onClose,
-  title,
-  subtitle,
-  points,
-}: ModalProps & { title: string; subtitle: string; points: string[] }) {
-  return (
-    <AdminModal title={title} subtitle={subtitle} onClose={onClose}>
-      <ul className="space-y-2">
-        {points.map((p) => (
-          <li
-            key={p}
-            className="flex gap-2 rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-700 dark:bg-white/5 dark:text-neutral-200"
-          >
-            <span className="text-emerald-500">✓</span>
-            {p}
-          </li>
-        ))}
-      </ul>
     </AdminModal>
   );
 }
@@ -3643,18 +3544,6 @@ const REGISTRY: Record<AdminModalKey, (p: ModalProps) => ReactElement | null> =
     leads: LeadsModal,
     webmaster: WebmasterModal,
     pixel: PixelModal,
-    utm: (p) => (
-      <InfoModal
-        {...p}
-        title="UTM Intelligence Hub"
-        subtitle="Gắn nhãn nguồn traffic cho AI Sales"
-        points={[
-          "Thêm ?utm_source=..&utm_medium=..&utm_campaign=.. vào link quảng cáo.",
-          "Hệ thống tự đọc UTM, gộp vào biến traffic_ads_source gửi webhook.",
-          "AI Sales Advisor dùng nguồn UTM để chọn kịch bản tư vấn phù hợp.",
-        ]}
-      />
-    ),
     cron: CronModal,
     storage: StorageModal,
     seo: SeoModal,
@@ -3663,8 +3552,6 @@ const REGISTRY: Record<AdminModalKey, (p: ModalProps) => ReactElement | null> =
     contact: ContactModal,
     countdown: CountdownModal,
     adminlink: AdminLinkModal,
-    tracking: PixelModal,
-    preview: () => null,
   };
 
 function SaveHint() {

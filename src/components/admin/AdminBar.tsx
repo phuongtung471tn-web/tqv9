@@ -29,6 +29,10 @@ import {
   Smartphone,
   Tablet,
   Monitor,
+  Clock,
+  Phone,
+  Sparkles,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -57,8 +61,11 @@ const TOOL_GROUPS: ToolGroup[] = [
     icon: Palette,
     tools: [
       { key: "editor", label: "Sửa Giao Diện", icon: Pencil },
+      { key: "theme", label: "Màu & Font", icon: Palette },
       { key: "pages", label: "Đa Trang", icon: FileText },
       { key: "fomo", label: "FOMO Popups", icon: Bell },
+      { key: "countdown", label: "Đồng Hồ Đếm Ngược", icon: Clock },
+      { key: "contact", label: "Hotline & Zalo", icon: Phone },
     ],
   },
   {
@@ -67,9 +74,12 @@ const TOOL_GROUPS: ToolGroup[] = [
     icon: Megaphone,
     tools: [
       { key: "leads", label: "Quản Lý Lead", icon: ClipboardList },
+      { key: "form", label: "Form & Webhook", icon: FileText },
+      { key: "webhook", label: "Webhook Hub", icon: Link2 },
       { key: "email", label: "Auto Email", icon: Mail },
       { key: "abtest", label: "A/B Testing", icon: SplitSquareHorizontal },
-      { key: "webhook", label: "Webhook Hub", icon: Link2 },
+      { key: "ai", label: "AI Sales Advisor", icon: Sparkles },
+      { key: "pixel", label: "Pixel & Sự Kiện Ads", icon: Target },
     ],
   },
   {
