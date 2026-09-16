@@ -52,9 +52,14 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
     return () => window.removeEventListener(LEAD_CREATED_EVENT, onLeadCreated);
   }, [c.enabled, c.autoDecrement, c.slotsLeft, update, save]);
 
+  const d = left === null ? 0 : Math.floor(left / 86400000);
+  const h = left === null ? 0 : Math.floor((left % 86400000) / 3600000);
+  const m = left === null ? 0 : Math.floor((left % 3600000) / 60000);
+  const s = left === null ? 0 : Math.floor((left % 60000) / 1000);
+
   const displaySlots = (() => {
     if (!c.enabled) return c.slotsLeft;
-    const totalSeconds = (d ?? 0) * 86400 + (h ?? 0) * 3600 + (m ?? 0) * 60 + (s ?? 0);
+    const totalSeconds = d * 86400 + h * 3600 + m * 60 + s;
     const maxSlots = c.slotsLeft;
     if (maxSlots <= 0) return 0;
     const dayProgress = 1 - Math.min(1, totalSeconds / (30 * 86400));
@@ -66,11 +71,6 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
   })();
 
   if (!c.enabled) return null;
-
-  const d = left === null ? 0 : Math.floor(left / 86400000);
-  const h = left === null ? 0 : Math.floor((left % 86400000) / 3600000);
-  const m = left === null ? 0 : Math.floor((left % 3600000) / 60000);
-  const s = left === null ? 0 : Math.floor((left % 60000) / 1000);
 
   const dark = tone === "dark";
   const box = dark
