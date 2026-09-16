@@ -355,32 +355,55 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       trackConversion(source, config.abTest.enabled ? variant : undefined);
 
       // Automated Email Sequencer (auto-responder) — chạy phía server nếu bật.
-      if (config.emailAutomation.enabled && email) {
+      if (config.emailAutomation.enabled) {
         const fill = (s: string) =>
           s
             .replaceAll("{name}", payload.full_name)
             .replaceAll("{phone}", payload.phone)
             .replaceAll("{city}", payload.city || "")
+            .replaceAll("{major}", form.major || "")
+            .replaceAll("{source}", source || "direct")
             .replaceAll("{ai_score}", String(aiScore));
-        void sendLeadEmail({
-          data: {
-            provider: config.emailAutomation.provider,
-            to: email,
-            from: config.emailAutomation.fromEmail,
-            subject: fill(config.emailAutomation.subject),
-            text: fill(config.emailAutomation.body),
-          },
-        })
-          .then((result) => {
-            if (!result.sent)
-              console.warn(
-                "Lead confirmation email was not sent:",
-                result.reason,
-              );
-          })
-          .catch((error) => {
-            console.warn("Lead confirmation email failed:", error);
-          });
+        const htmlBody = (s: string) =>
+          `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a;line-height:1.6">${s
+            .replaceAll("\n", "<br />")
+            .replaceAll("{name}", `<strong>${payload.full_name}</strong>`)
+            .replaceAll("{phone}", `<strong>${payload.phone}</strong>`)
+            .replaceAll("{city}", payload.city || "—")
+            .replaceAll("{major}", form.major || "—")
+            .replaceAll("{source}", source || "direct")
+            .replaceAll("{ai_score}", String(aiScore))}</div>`;
+        // Email cảm ơn gửi tới khách (nếu khách cung cấp email)
+        if (email) {
+          void sendLeadEmail({
+            data: {
+              provider: config.emailAutomation.provider,
+              to: email,
+              from: config.emailAutomation.fromEmail,
+              subject: fill(config.emailAutomation.subject),
+              text: fill(config.emailAutomation.body),
+              html: htmlBody(config.emailAutomation.body),
+            },
+          }).catch((error) =>
+            console.warn("Lead confirmation email failed:", error),
+          );
+        }
+        // Email thông báo lead mới gửi tới admin/đội ngũ tư vấn
+        const notifyTo = config.emailAutomation.notifyEmail.trim();
+        if (notifyTo) {
+          void sendLeadEmail({
+            data: {
+              provider: config.emailAutomation.provider,
+              to: notifyTo,
+              from: config.emailAutomation.fromEmail,
+              subject: fill(config.emailAutomation.notifySubject),
+              text: fill(config.emailAutomation.notifyBody),
+              html: htmlBody(config.emailAutomation.notifyBody),
+            },
+          }).catch((error) =>
+            console.warn("Admin notification email failed:", error),
+          );
+        }
       }
 
       // Chỉ bắn tracking SAU khi dữ liệu đã gửi thành công

@@ -298,18 +298,44 @@ function ThemeModal({ onClose }: ModalProps) {
         </Field>
       </div>
       <Field label="Font tiêu đề">
-        <TextInput
+        <select
           value={t.fontHeading}
           onChange={(e) =>
             update((d) => (d.theme.fontHeading = e.target.value))
           }
-        />
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5"
+        >
+          <option value="Be Vietnam Pro">Be Vietnam Pro</option>
+          <option value="Inter">Inter</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Open Sans">Open Sans</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Nunito">Nunito</option>
+          <option value="Lexend">Lexend</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Sora">Sora</option>
+          <option value="system-ui">System UI</option>
+        </select>
       </Field>
       <Field label="Font nội dung">
-        <TextInput
+        <select
           value={t.fontBody}
-          onChange={(e) => update((d) => (d.theme.fontBody = e.target.value))}
-        />
+          onChange={(e) =>
+            update((d) => (d.theme.fontBody = e.target.value))
+          }
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5"
+        >
+          <option value="Be Vietnam Pro">Be Vietnam Pro</option>
+          <option value="Inter">Inter</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Open Sans">Open Sans</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Nunito">Nunito</option>
+          <option value="Lexend">Lexend</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Sora">Sora</option>
+          <option value="system-ui">System UI</option>
+        </select>
       </Field>
       <p className="text-[11px] text-neutral-400">
         Màu và font này được áp dụng chung cho trang chủ, trang phụ và các khối
@@ -785,6 +811,30 @@ function AiModal({ onClose }: ModalProps) {
           />
         </Field>
       </div>
+      <p className="mt-3 mb-1 text-xs font-bold text-neutral-700">Trọng số chấm điểm (tổng 100)</p>
+      <div className="grid grid-cols-3 gap-2">
+        <Field label="Thiết bị VIP">
+          <TextInput type="number" value={a.weightDevice} onChange={(e) => update((d) => (d.aiAdvisor.weightDevice = +e.target.value))} />
+        </Field>
+        <Field label="Tỉnh trọng điểm">
+          <TextInput type="number" value={a.weightRegion} onChange={(e) => update((d) => (d.aiAdvisor.weightRegion = +e.target.value))} />
+        </Field>
+        <Field label="Điền nhanh (bot)">
+          <TextInput type="number" value={a.weightFastFill} onChange={(e) => update((d) => (d.aiAdvisor.weightFastFill = +e.target.value))} />
+        </Field>
+        <Field label="Thời gian trên trang">
+          <TextInput type="number" value={a.weightTimeOnPage} onChange={(e) => update((d) => (d.aiAdvisor.weightTimeOnPage = +e.target.value))} />
+        </Field>
+        <Field label="Độ sâu cuộn">
+          <TextInput type="number" value={a.weightScroll} onChange={(e) => update((d) => (d.aiAdvisor.weightScroll = +e.target.value))} />
+        </Field>
+        <Field label="Quay lại nhiều lần">
+          <TextInput type="number" value={a.weightReturnVisit} onChange={(e) => update((d) => (d.aiAdvisor.weightReturnVisit = +e.target.value))} />
+        </Field>
+      </div>
+      <Field label="Mẫu kịch bản gọi" hint="Dùng {name} {city} {major} {ai_rank} {ai_score} {sale_advice}">
+        <TextArea value={a.callScriptTemplate} onChange={(e) => update((d) => (d.aiAdvisor.callScriptTemplate = e.target.value))} />
+      </Field>
       <SaveHint />
     </AdminModal>
   );
@@ -852,6 +902,19 @@ function EmailModal({ onClose }: ModalProps) {
           placeholder="ban@example.com"
         />
       </Field>
+      <Field
+        label="Email nhận thông báo lead mới"
+        hint="Đội ngũ tư vấn sẽ nhận email khi có khách đăng ký. Dùng {name} {phone} {city} {major} {source} {ai_score}"
+      >
+        <TextInput
+          type="email"
+          value={e.notifyEmail}
+          onChange={(ev) =>
+            update((d) => (d.emailAutomation.notifyEmail = ev.target.value))
+          }
+          placeholder="tu-van@congty.com"
+        />
+      </Field>
       <Field label="Tiêu đề" hint="Dùng {name} {phone} {city} {ai_score}">
         <TextInput
           value={e.subject}
@@ -877,6 +940,30 @@ function EmailModal({ onClose }: ModalProps) {
         <code>GMAIL_CLIENT_SECRET</code>, <code>GMAIL_REFRESH_TOKEN</code> trên
         server. Runtime Cloudflare dùng Gmail API OAuth2, không dùng SMTP TCP
         trực tiếp.
+      </div>
+      <div className="mb-3 rounded-lg border border-sky-200 p-3">
+        <p className="mb-2 text-xs font-bold text-sky-800">
+          Email thông báo cho đội ngũ tư vấn
+        </p>
+        <Field
+          label="Tiêu đề thông báo"
+          hint="Dùng {name} {phone} {city} {major} {source} {ai_score}"
+        >
+          <TextInput
+            value={e.notifySubject}
+            onChange={(ev) =>
+              update((d) => (d.emailAutomation.notifySubject = ev.target.value))
+            }
+          />
+        </Field>
+        <Field label="Nội dung thông báo">
+          <TextArea
+            value={e.notifyBody}
+            onChange={(ev) =>
+              update((d) => (d.emailAutomation.notifyBody = ev.target.value))
+            }
+          />
+        </Field>
       </div>
       <button
         type="button"
@@ -1305,82 +1392,67 @@ function LeadsModal({ onClose }: ModalProps) {
         </p>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-xl border border-neutral-200 dark:border-white/10">
-          <table className="w-full min-w-[560px] text-left text-xs">
+          <table className="w-full min-w-[480px] text-left text-xs">
             <thead className="bg-neutral-100 text-[10px] uppercase tracking-wide text-neutral-500 dark:bg-white/5">
               <tr>
-                <th className="px-3 py-2">Họ tên</th>
-                <th className="px-3 py-2">Điện thoại</th>
-                <th className="px-3 py-2">Tỉnh/Thành</th>
-                <th className="px-3 py-2">Ngành</th>
-                <th className="px-3 py-2">Thời gian</th>
-                <th className="px-3 py-2">Nguồn</th>
-                <th className="px-3 py-2">Lưu tại</th>
+                <th className="px-2 py-2">Khách</th>
+                <th className="px-2 py-2">SĐT</th>
+                <th className="px-2 py-2">Tỉnh</th>
+                <th className="px-2 py-2">Ngành</th>
+                <th className="px-2 py-2">Thời gian</th>
+                <th className="px-2 py-2">Nguồn</th>
+                <th className="px-2 py-2">Lưu</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((l) => (
                 <tr
                   key={l.id}
-                  className="border-t border-neutral-200 dark:border-white/10"
+                  className="border-t border-neutral-200 align-top dark:border-white/10"
                 >
-                  <td className="px-3 py-2 font-semibold">
-                    <div className="min-w-0">
-                      <div className="break-words">{l.name}</div>
-                      {l.aiRank && (
-                        <span className="ml-1.5 rounded bg-amber-100 px-1.5 text-[10px] font-bold text-amber-700">
-                          {l.aiRank}
-                        </span>
-                      )}
-                      {l.riskLevel && l.riskLevel !== "low" && (
-                        <span
-                          title={
-                            l.riskReasons?.join("; ") ||
-                            l.recommendedAction ||
-                            "Cần kiểm tra thêm"
-                          }
-                          className={`ml-1.5 rounded px-1.5 text-[10px] font-bold ${
-                            l.riskLevel === "high"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
-                          {l.riskLevel === "high" ? "CẦN XÁC MINH" : "XEM LẠI"}
-                        </span>
-                      )}
-                      <div className="mt-1 space-y-1 text-[11px] font-normal leading-relaxed text-neutral-500">
-                        {l.deviceTechInfo && (
-                          <p className="break-words">{l.deviceTechInfo}</p>
-                        )}
-                        {l.networkLabel && (
-                          <p className="break-words">{l.networkLabel}</p>
-                        )}
-                        {l.trafficAdsSource && (
-                          <p className="break-words">{l.trafficAdsSource}</p>
-                        )}
-                        {l.saleAdvice && (
-                          <p className="break-words text-neutral-700 dark:text-neutral-200">
-                            {l.saleAdvice}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                  <td className="max-w-[140px] px-2 py-2 font-semibold">
+                    <div className="truncate" title={l.name}>{l.name}</div>
+                    {l.aiRank && (
+                      <span className="ml-1.5 rounded bg-amber-100 px-1.5 text-[10px] font-bold text-amber-700">
+                        {l.aiRank}
+                      </span>
+                    )}
+                    {l.riskLevel && l.riskLevel !== "low" && (
+                      <span
+                        title={
+                          l.riskReasons?.join("; ") ||
+                          l.recommendedAction ||
+                          "Cần kiểm tra thêm"
+                        }
+                        className={`ml-1.5 rounded px-1.5 text-[10px] font-bold ${
+                          l.riskLevel === "high"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {l.riskLevel === "high" ? "CẦN XÁC MINH" : "XEM LẠI"}
+                      </span>
+                    )}
+                    {l.saleAdvice && (
+                      <p className="mt-1 text-[10px] font-normal leading-snug text-neutral-500 dark:text-neutral-300">
+                        {l.saleAdvice}
+                      </p>
+                    )}
                   </td>
-                  <td className="px-3 py-2 tabular-nums">{l.phone}</td>
-                  <td className="px-3 py-2">{l.city || "—"}</td>
-                  <td className="px-3 py-2">{l.major || "—"}</td>
-                  <td className="px-3 py-2 text-neutral-500">
+                  <td className="whitespace-nowrap px-2 py-2 tabular-nums">{l.phone}</td>
+                  <td className="max-w-[80px] truncate px-2 py-2" title={l.city || ""}>{l.city || "—"}</td>
+                  <td className="max-w-[100px] truncate px-2 py-2" title={l.major || ""}>{l.major || "—"}</td>
+                  <td className="whitespace-nowrap px-2 py-2 text-neutral-500">
                     {new Date(l.at).toLocaleString("vi-VN")}
                   </td>
-                  <td className="px-3 py-2 text-neutral-500">
-                    <div className="space-y-1">
-                      <div>{l.utmSource || "direct"}</div>
-                      <div className="text-[11px] leading-relaxed">
-                        Phiên {l.currentSession || 1} · Hôm nay{" "}
-                        {l.visitsToday || 0} · Tháng {l.visitsMonth || 0}
-                      </div>
+                  <td className="px-2 py-2 text-neutral-500">
+                    <div>{l.utmSource || "direct"}</div>
+                    <div className="text-[10px] leading-tight">
+                      Phiên {l.currentSession || 1} · Hôm nay{" "}
+                      {l.visitsToday || 0} · Tháng {l.visitsMonth || 0}
                     </div>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         l.storage === "database"

@@ -91,14 +91,9 @@ export function RecentLeadPopup() {
   useEffect(() => {
     setDismissed(false);
     setVisible(false);
-    if (
-      !fomo.enabled ||
-      (fomo.source === "sample" && sampleItems.length === 0) ||
-      (fomo.source === "recentLeads" &&
-        leadsRef.current.length === 0 &&
-        sampleItems.length === 0)
-    )
-      return;
+    if (!fomo.enabled) return;
+    if (fomo.source === "sample" && sampleItems.length === 0) return;
+    if (fomo.source === "recentLeads" && leadsRef.current.length === 0) return;
     if (
       fomo.respectReducedMotion &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -115,31 +110,29 @@ export function RecentLeadPopup() {
       Math.min(3600, Math.max(minGap / 1000, fomo.maxDelaySec)) * 1000;
 
     const show = () => {
-      const actual =
-        fomo.source === "recentLeads"
-          ? pick(
-              leadsRef.current,
-              leadsRef.current.find((lead) => lead.name === lastName),
-            )
-          : undefined;
-      const sample =
-        fomo.source === "sample" || leadsRef.current.length === 0
-          ? pick(
-              sampleItems,
-              sampleItems.find((entry) => entry.name === lastName),
-            )
-          : undefined;
-      const next = actual
-        ? {
-            name: actual.name,
-            city: actual.city || "",
-            mins: Math.max(
-              1,
-              Math.floor((Date.now() - new Date(actual.at).getTime()) / 60000),
-            ),
-          }
-        : sample;
-      if (!next) return;
+      let next: { name: string; city: string; mins: number } | undefined;
+      if (fomo.source === "recentLeads") {
+        const actual = pick(
+          leadsRef.current,
+          leadsRef.current.find((lead) => lead.name === lastName),
+        );
+        if (!actual) return;
+        next = {
+          name: actual.name,
+          city: actual.city || "",
+          mins: Math.max(
+            1,
+            Math.floor((Date.now() - new Date(actual.at).getTime()) / 60000),
+          ),
+        };
+      } else {
+        const sample = pick(
+          sampleItems,
+          sampleItems.find((entry) => entry.name === lastName),
+        );
+        if (!sample) return;
+        next = sample;
+      }
       lastName = next.name;
       previousNameRef.current = lastName;
       setItem(next);

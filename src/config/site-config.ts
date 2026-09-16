@@ -142,6 +142,13 @@ export interface AiAdvisorConfig {
   fastFillThresholdSec: number;
   vipTimeOnPageSec: number;
   vipScrollPercent: number;
+  weightDevice: number;
+  weightRegion: number;
+  weightFastFill: number;
+  weightTimeOnPage: number;
+  weightScroll: number;
+  weightReturnVisit: number;
+  callScriptTemplate: string;
 }
 
 export interface ThemeConfig {
@@ -235,8 +242,11 @@ export interface SiteConfig {
     enabled: boolean;
     provider: "resend" | "gmail";
     fromEmail: string;
+    notifyEmail: string;
     subject: string;
     body: string; // supports {name} {phone} {city} {ai_score}
+    notifySubject: string;
+    notifyBody: string;
   };
   abTest: {
     enabled: boolean;
@@ -711,14 +721,25 @@ export const DEFAULT_CONFIG: SiteConfig = {
     fastFillThresholdSec: 4,
     vipTimeOnPageSec: 80,
     vipScrollPercent: 70,
+    weightDevice: 20,
+    weightRegion: 15,
+    weightFastFill: 15,
+    weightTimeOnPage: 20,
+    weightScroll: 15,
+    weightReturnVisit: 15,
+    callScriptTemplate:
+      "Chào {name}, em gọi từ chương trình du học nghề Trung Quốc. Em thấy anh/chị ở {city}, quan tâm ngành {major}. Dựa trên hành vi online, em đánh giá khách là {ai_rank} (score {ai_score}). Gợi ý: {sale_advice}",
   },
   webhooks: [],
   emailAutomation: {
     enabled: false,
     provider: "resend",
     fromEmail: "",
+    notifyEmail: "",
     subject: "Cảm ơn {name} đã đăng ký tư vấn du học nghề Trung Quốc",
     body: "Chào {name},\n\nCảm ơn bạn đã để lại thông tin. Đội ngũ tư vấn sẽ liên hệ số {phone} trong thời gian sớm nhất.\n\nTrân trọng.",
+    notifySubject: "[Lead mới] {name} — {phone} — {city}",
+    notifyBody: "Lead mới vừa đăng ký:\n\nHọ tên: {name}\nSĐT: {phone}\nTỉnh: {city}\nNgành: {major}\nAI Score: {ai_score}\nNguồn: {source}",
   },
   abTest: {
     enabled: false,

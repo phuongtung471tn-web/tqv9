@@ -12,6 +12,7 @@ const schema = z.object({
   from: z.string().email(),
   subject: z.string().min(1),
   text: z.string().min(1),
+  html: z.string().optional(),
 });
 
 export const checkEmailConfig = createServerFn({ method: "GET" }).handler(
@@ -94,6 +95,7 @@ export const sendLeadEmail = createServerFn({ method: "POST" })
         to: [data.to],
         subject: data.subject,
         text: data.text,
+        ...(data.html ? { html: data.html } : {}),
       }),
     });
     if (!res.ok) {
