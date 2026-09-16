@@ -444,6 +444,14 @@ function readAttribution(): TrafficAttribution {
   let detectedSource = pick("utm_source");
   let detectedMedium = pick("utm_medium");
   if (!detectedSource) {
+    // zarsrc là tham số đặc trưng của Zalo (vd: zarsrc=30)
+    const zarsrc = params.get("zarsrc");
+    if (zarsrc) {
+      detectedSource = "zalo";
+      if (!detectedMedium) detectedMedium = "social";
+    }
+  }
+  if (!detectedSource) {
     const ua = navigator.userAgent;
     if (/FBAN|FBAV|Facebook/i.test(ua)) {
       detectedSource = "facebook";

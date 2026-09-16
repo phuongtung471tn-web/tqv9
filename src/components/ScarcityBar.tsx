@@ -59,14 +59,16 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
 
   const displaySlots = (() => {
     if (!c.enabled) return c.slotsLeft;
-    const totalSeconds = d * 86400 + h * 3600 + m * 60 + s;
     const maxSlots = c.slotsLeft;
     if (maxSlots <= 0) return 0;
-    const dayProgress = 1 - Math.min(1, totalSeconds / (30 * 86400));
+    // Số suất giảm dần theo thời gian: đầu kỳ gần maxSlots, cuối kỳ gần 1.
+    // totalSeconds giảm dần → ratio giảm → dynamic giảm.
+    const totalSeconds = d * 86400 + h * 3600 + m * 60 + s;
+    const ratio = Math.min(1, totalSeconds / (30 * 86400));
     const fluctuation = Math.floor(
       Math.sin(Date.now() / 300000) * 1.5 + Math.cos(Date.now() / 470000) * 1,
     );
-    const dynamic = Math.round(maxSlots * (0.85 + dayProgress * 0.15)) + fluctuation;
+    const dynamic = Math.round(maxSlots * (0.15 + ratio * 0.85)) + fluctuation;
     return Math.max(1, Math.min(maxSlots, dynamic));
   })();
 

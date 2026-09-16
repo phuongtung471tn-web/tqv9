@@ -77,6 +77,10 @@ export function utmSource(): string {
   const utm = p.get("utm_source");
   if (utm) return utm;
 
+  // zarsrc là tham số đặc trưng của Zalo (vd: ?zarsrc=30)
+  const zarsrc = p.get("zarsrc");
+  if (zarsrc) return "zalo";
+
   // Đọc UTM đã lưu từ lần truy cập đầu (readAttribution lưu vào localStorage)
   try {
     const stored = JSON.parse(
