@@ -242,6 +242,8 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
     setError("");
     setStatus("sending");
 
+    const sessionSource = utmSource();
+    const variant = getVariant(config.abTest.enabled, config.abTest.split);
     const { behavior, assessment, visitorBehaviorPayload } =
       buildVisitorBehaviorPayload(
         {
@@ -252,8 +254,6 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         sessionSource,
       );
     const { score: aiScore, rank: aiRank } = assessment;
-    const variant = getVariant(config.abTest.enabled, config.abTest.split);
-    const sessionSource = utmSource();
     const source = behavior.utm_source || sessionSource;
 
     const payload = {
@@ -339,17 +339,16 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       };
       await saveLead(leadRecord, config);
 
-      // Chờ toàn bộ endpoint đã bật nhận lead trước khi xác nhận chuyển đổi.
+      // Gửi lead ra webhook các kênh — best-effort, không chặn trải nghiệm khách.
       const delivery = await dispatchLead(config, payload);
       if (delivery.failedCount && delivery.failedCount > 0) {
         const failed = delivery.results
           .filter((result) => !result.ok)
           .map((result) => result.label)
           .join(", ");
-        console.warn(`Webhook partial failure (${delivery.failedCount}/${delivery.results.length}): ${failed}`);
-      }
-      if (!delivery.ok) {
-        throw new Error("Webhook chưa được cấu hình hoặc chưa phản hồi.");
+        console.warn(
+          `Webhook partial failure (${delivery.failedCount}/${delivery.results.length}): ${failed}`,
+        );
       }
 
       // Ghi nhận chuyển đổi cho Analytics Dashboard + A/B comparison.
