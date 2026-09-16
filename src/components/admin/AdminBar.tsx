@@ -78,6 +78,7 @@ const TOOL_GROUPS: ToolGroup[] = [
       { key: "webhook", label: "Webhook Hub", icon: Link2 },
       { key: "email", label: "Auto Email", icon: Mail },
       { key: "abtest", label: "A/B Testing", icon: SplitSquareHorizontal },
+      { key: "utm", label: "UTM Hub", icon: Globe },
       { key: "ai", label: "AI Sales Advisor", icon: Sparkles },
       { key: "pixel", label: "Pixel & Sự Kiện Ads", icon: Target },
     ],

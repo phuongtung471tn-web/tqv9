@@ -36,8 +36,44 @@ export function resetVariant(splitToB?: number): void {
   }
 }
 
+const REFERRER_MAP: Array<[RegExp, string]> = [
+  [/facebook\.com|fb\.me|fbcdn/i, "facebook"],
+  [/m\.facebook|mbasic\.facebook/i, "facebook"],
+  [/tiktok\.com|t\.tiktok|bytedance/i, "tiktok"],
+  [/zalo\.me|zaloapp|z\.alo/i, "zalo"],
+  [/google\./i, "google"],
+  [/instagram\.com|instagr\.am/i, "instagram"],
+  [/t\.co|twitter\.com|x\.com/i, "twitter"],
+  [/t\.me|telegram\.org|telegram/i, "telegram"],
+  [/messenger|fb\.com\/messages/i, "messenger"],
+  [/youtube\.com|youtu\.be/i, "youtube"],
+  [/linkedin\.com|lnkd\.in/i, "linkedin"],
+  [/pinterest\.com|pin\.it/i, "pinterest"],
+  [/reddit\.com/i, "reddit"],
+  [/snapchat\.com/i, "snapchat"],
+  [/wechat|weixin/i, "wechat"],
+  [/whatsapp\.com/i, "whatsapp"],
+  [/viber/i, "viber"],
+];
+
+export function detectReferrerSource(referrer: string): string {
+  if (!referrer) return "";
+  for (const [regex, name] of REFERRER_MAP) {
+    if (regex.test(referrer)) return name;
+  }
+  try {
+    const host = new URL(referrer).hostname.replace(/^www\./, "");
+    return host || "referral";
+  } catch {
+    return "referral";
+  }
+}
+
 export function utmSource(): string {
   if (typeof window === "undefined") return "direct";
   const p = new URLSearchParams(window.location.search);
-  return p.get("utm_source") || (document.referrer ? "referral" : "direct");
+  const utm = p.get("utm_source");
+  if (utm) return utm;
+  if (document.referrer) return detectReferrerSource(document.referrer);
+  return "direct";
 }

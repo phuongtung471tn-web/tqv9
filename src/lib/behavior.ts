@@ -181,19 +181,19 @@ function generateSaleAdvice(
   assessment: LeadAssessment = scoreLead(data),
 ): string {
   if (assessment.riskLevel === "unrated") {
-    return `[Chưa chấm AI] ${assessment.recommendedAction}.`;
+    return `ℹ️ [Chưa chấm AI] ${assessment.recommendedAction}.`;
   }
   if (assessment.riskLevel === "high") {
     const reasons = assessment.reasons.length
       ? assessment.reasons.join("; ")
       : "Lead có tín hiệu bất thường";
-    return `[Cần xác minh] ${reasons}. ${assessment.recommendedAction}.`;
+    return `⚠️ [Cần xác minh] ${reasons}. ${assessment.recommendedAction}.`;
   }
   if (assessment.riskLevel === "review") {
     const reasons = assessment.reasons.length
       ? assessment.reasons.join("; ")
       : "Cần xác minh thêm";
-    return `[Tín hiệu yếu] ${reasons}. ${assessment.recommendedAction}.`;
+    return `🟡 [Tín hiệu yếu] ${reasons}. ${assessment.recommendedAction}.`;
   }
 
   const advice: string[] = [];
@@ -205,28 +205,28 @@ function generateSaleAdvice(
 
   const faqAdvice: Record<string, [string, string]> = {
     hoc_phi: [
-      "[Lo ngại học phí] Khách mở câu hỏi về học phí 0Đ — cần xác minh niềm tin.",
-      "Giải thích rõ nguồn tài trợ từ doanh nghiệp Trung Quốc, liệt kê chi phí thực tế (hồ sơ, vé, sinh hoạt) và nhấn mạnh không thu phí trung gian.",
+      "💡 [Lo ngại học phí] Khách mở câu hỏi về học phí 0Đ — cần xác minh niềm tin.",
+      "👉 Giải thích rõ nguồn tài trợ từ doanh nghiệp Trung Quốc, liệt kê chi phí thực tế (hồ sơ, vé, sinh hoạt) và nhấn mạnh không thu phí trung gian.",
     ],
     tieng_trung: [
-      "[Lo ngại ngôn ngữ] Khách quan tâm rào cản tiếng Trung và điều kiện đầu vào.",
-      "Tư vấn ngắn, rõ: học từ 0, có lộ trình tiền HSK và hỗ trợ thích nghi trước khi bay.",
+      "💡 [Lo ngại ngôn ngữ] Khách quan tâm rào cản tiếng Trung và điều kiện đầu vào.",
+      "👉 Tư vấn ngắn, rõ: học từ 0, có lộ trình tiền HSK và hỗ trợ thích nghi trước khi bay.",
     ],
     luong_thuc_tap: [
-      "[Quan tâm thu nhập] Khách mở câu hỏi về lương thực tập — cần con số cụ thể.",
-      `Nêu mức 15-30 triệu/tháng theo ngành ${nganh}, giải thích ca làm, ký túc xá miễn phí và khả năng gửi tiền về nhà.`,
+      "💡 [Quan tâm thu nhập] Khách mở câu hỏi về lương thực tập — cần con số cụ thể.",
+      `👉 Nêu mức 15-30 triệu/tháng theo ngành ${nganh}, giải thích ca làm, ký túc xá miễn phí và khả năng gửi tiền về nhà.",
     ],
     bang_cap: [
-      "[Quan tâm bằng cấp] Khách hỏi về giá trị bằng cấp và công nhận quốc tế.",
-      "Nhấn mạnh bằng Cao đẳng chính quy, công nhận quốc tế, có thể ở lại làm việc hoặc học liên thông lên Đại học.",
+      "💡 [Quan tâm bằng cấp] Khách hỏi về giá trị bằng cấp và công nhận quốc tế.",
+      "👉 Nhấn mạnh bằng Cao đẳng chính quy, công nhận quốc tế, có thể ở lại làm việc hoặc học liên thông lên Đại học.",
     ],
     thoi_gian: [
-      "[Quan tâm thời gian] Khách hỏi về lịch trình nhập học — có nhu cầu đi sớm.",
-      "Nêu 2 kỳ nhập học (tháng 3 và tháng 9), thời gian 3-5 tháng từ đăng ký đến bay, và thời điểm đăng ký lý tưởng.",
+      "💡 [Quan tâm thời gian] Khách hỏi về lịch trình nhập học — có nhu cầu đi sớm.",
+      "👉 Nêu 2 kỳ nhập học (tháng 3 và tháng 9), thời gian 3-5 tháng từ đăng ký đến bay, và thời điểm đăng ký lý tưởng.",
     ],
     nganh_hoc: [
-      "[Quan tâm ngành học] Khách hỏi ngành nào cần nhân lực nhất — đang phân vân lựa chọn.",
-      "Giới thiệu 4 ngành hot nhất (ô tô điện, drone, IoT, logistics), so sánh thu nhập và cơ hội việc làm giữa các ngành.",
+      "💡 [Quan tâm ngành học] Khách hỏi ngành nào cần nhân lực nhất — đang phân vân lựa chọn.",
+      "👉 Giới thiệu 4 ngành hot nhất (ô tô điện, drone, IoT, logistics), so sánh thu nhập và cơ hội việc làm giữa các ngành.",
     ],
   };
 
@@ -238,10 +238,10 @@ function generateSaleAdvice(
     data.scroll_depth_percent >= 70
   ) {
     advice.push(
-      `[Khách VIP] Thiết bị ${data.device_model_name}, đọc kỹ trang ${data.time_on_page_seconds} giây và cuộn ${data.scroll_depth_percent}%.`,
+      `💡 [Khách VIP] Thiết bị ${data.device_model_name}, đọc kỹ trang ${data.time_on_page_seconds} giây và cuộn ${data.scroll_depth_percent}%.`,
     );
     advice.push(
-      `Tư vấn theo hướng phụ huynh quan tâm độ an toàn, lộ trình visa và đầu ra nghề nghiệp của ngành ${nganh}.`,
+      `👉 Tư vấn theo hướng phụ huynh quan tâm độ an toàn, lộ trình visa và đầu ra nghề nghiệp của ngành ${nganh}.`,
     );
   } else if (faq) {
     advice.push(faq[0]);
@@ -252,59 +252,59 @@ function generateSaleAdvice(
     /cpc|paid|ads/i.test(data.utm_medium)
   ) {
     advice.push(
-      "[Khách quan tâm tài chính] Tập trung vào thu nhập, chi phí và khả năng tự chủ tài chính.",
+      "💡 [Khách quan tâm tài chính] Tập trung vào thu nhập, chi phí và khả năng tự chủ tài chính.",
     );
     advice.push(
-      `Mở đầu bằng mức lương thực tập của ngành ${nganh}, rồi chốt bằng lộ trình học phí 0Đ và cơ hội việc làm sau tốt nghiệp.`,
+      `👉 Mở đầu bằng mức lương thực tập của ngành ${nganh}, rồi chốt bằng lộ trình học phí 0Đ và cơ hội việc làm sau tốt nghiệp.",
     );
   } else if (data.focus_section === "nganh_hoc") {
     advice.push(
-      "[Đang xem ngành] Khách dừng lâu ở phần ngành học — đang so sánh lựa chọn.",
+      "💡 [Đang xem ngành] Khách dừng lâu ở phần ngành học — đang so sánh lựa chọn.",
     );
     advice.push(
-      `Giới thiệu ${nganh} trước, rồi so sánh với 1-2 ngành gần nhau về thu nhập và đầu ra để giúp khách chốt nhanh.`,
+      `👉 Giới thiệu ${nganh} trước, rồi so sánh với 1-2 ngành gần nhau về thu nhập và đầu ra để giúp khách chốt nhanh.",
     );
   } else if (data.industry_switch_count > 1) {
     advice.push(
-      `[Phân vân ngành] Đã đổi ngành ${data.industry_switch_count} lần trước khi chốt ${nganh}.`,
+      `💡 [Phân vân ngành] Đã đổi ngành ${data.industry_switch_count} lần trước khi chốt ${nganh}.`,
     );
     advice.push(
-      "Sale nên đóng vai hướng nghiệp, so sánh đầu ra, môi trường làm việc và thu nhập giữa 2-3 ngành gần nhau.",
+      "👉 Sale nên đóng vai hướng nghiệp, so sánh đầu ra, môi trường làm việc và thu nhập giữa 2-3 ngành gần nhau.",
     );
   } else if (data.time_on_page_seconds < 25) {
     advice.push(
-      `[Xem nhanh] Khách lướt nhanh bằng ${data.device_model_name}.`,
+      `💡 [Xem nhanh] Khách lướt nhanh bằng ${data.device_model_name}.`,
     );
     advice.push(
-      "Ưu tiên gửi Zalo kèm ảnh thực tế/KTX trước, sau đó mới gọi điện chốt nhu cầu.",
+      "👉 Ưu tiên gửi Zalo kèm ảnh thực tế/KTX trước, sau đó mới gọi điện chốt nhu cầu.",
     );
   } else {
     advice.push(
-      `[Tìm hiểu nghiêm túc] ${data.device_model_name}, mạng ${data.network_label}. Ngành quan tâm: ${nganh}.`,
+      `💡 [Tìm hiểu nghiêm túc] ${data.device_model_name}, mạng ${data.network_label}. Ngành quan tâm: ${nganh}.`,
     );
     advice.push(
-      "Gọi tư vấn theo kịch bản khám phá mục tiêu học tập, tài chính và thời điểm nhập học phù hợp.",
+      "👉 Gọi tư vấn theo kịch bản khám phá mục tiêu học tập, tài chính và thời điểm nhập học phù hợp.",
     );
   }
 
   if (data.hardware_concurrency != null && data.hardware_concurrency <= 2) {
     advice.push(
-      `Thiết bị phần cứng yếu (${data.hardware_concurrency} nhân), ưu tiên nhắn Zalo thay vì gọi điện.`,
+      `⚡ Thiết bị phần cứng yếu (${data.hardware_concurrency} nhân), ưu tiên nhắn Zalo thay vì gọi điện.`,
     );
   }
   if (data.time_to_first_interaction_seconds > 120) {
     advice.push(
-      "Khách suy nghĩ khá lâu trước khi điền form, cần tư vấn chuyên sâu và tránh chốt vội.",
+      "🧐 Khách suy nghĩ khá lâu trước khi điền form, cần tư vấn chuyên sâu và tránh chốt vội.",
     );
   }
   if (isKeyRegion) {
     advice.push(
-      `Khách ở ${data.form_city}, nên nhắc tới cộng đồng học viên đồng hương và case thành công gần khu vực này.`,
+      `📌 Khách ở ${data.form_city}, nên nhắc tới cộng đồng học viên đồng hương và case thành công gần khu vực này.`,
     );
   }
   if (isNightTime) {
     advice.push(
-      "Lead đến vào đêm muộn, nên nhắn chào ngay nhưng hẹn gọi lại vào giờ hành chính hôm sau.",
+      "🌙 Lead đến vào đêm muộn, nên nhắn chào ngay nhưng hẹn gọi lại vào giờ hành chính hôm sau.",
     );
   }
 
@@ -313,19 +313,19 @@ function generateSaleAdvice(
 
 function generateBehaviorSummary(data: BehaviorData): string {
   const parts: string[] = [];
-  parts.push(`Thời gian xem trang: ${data.time_on_page_seconds} giây`);
+  parts.push(`⏱️ Thời gian xem trang: ${data.time_on_page_seconds} giây`);
   parts.push(
-    `Mất ${data.time_to_first_interaction_seconds || 0} giây để bắt đầu tương tác`,
+    `🖱️ Mất ${data.time_to_first_interaction_seconds || 0} giây để bắt đầu tương tác`,
   );
-  parts.push(`Điền form trong ${data.form_fill_duration_seconds || 0} giây`);
+  parts.push(`📝 Điền form trong ${data.form_fill_duration_seconds || 0} giây`);
   parts.push(
-    `Cuộn đọc ${data.scroll_depth_percent}% nội dung trang`,
+    `📜 Cuộn đọc ${data.scroll_depth_percent}% nội dung trang`,
   );
   parts.push(
-    `Lần truy cập thứ ${data.current_session} (hôm nay ${data.visits_today} lần, tháng này ${data.visits_month} lần)`,
+    `👀 Lần truy cập thứ ${data.current_session} (hôm nay ${data.visits_today} lần, tháng này ${data.visits_month} lần)`,
   );
   if (data.industry_switch_count > 0)
-    parts.push(`Đã đổi ngành xem ${data.industry_switch_count} lần trước khi chốt`);
+    parts.push(`🔄 Đã đổi ngành xem ${data.industry_switch_count} lần trước khi chốt`);
   if (data.focus_section) {
     const sectionLabels: Record<string, string> = {
       luong_thuc_tap: "phần lương thực tập",
@@ -347,12 +347,12 @@ function generateBehaviorSummary(data: BehaviorData): string {
   };
   if (data.faq_clicked)
     parts.push(`Đọc câu hỏi thường gặp về ${faqLabels[data.faq_clicked] || data.faq_clicked}`);
-  if (data.is_copy_paste) parts.push("Có copy/paste số điện thoại");
+  if (data.is_copy_paste) parts.push("📋 Có copy/paste số điện thoại");
   if (data.scroll_back_count > 10)
-    parts.push(`Cuộn lên/xuống nhiều (${data.scroll_back_count} lần) — đang đọc kỹ`);
-  if (data.is_headless_browser) parts.push("Phát hiện trình duyệt tự động (bot)");
+    parts.push(`↕️ Cuộn lên/xuống nhiều (${data.scroll_back_count} lần) — đang đọc kỹ`);
+  if (data.is_headless_browser) parts.push("🤖 Phát hiện trình duyệt tự động (bot)");
   if (data.is_in_app_browser)
-    parts.push("Mở trang trong app Facebook/TikTok/Zalo");
+    parts.push("📱 Mở trang trong app Facebook/TikTok/Zalo");
   return parts.join(". ");
 }
 
@@ -382,12 +382,36 @@ function generateDeviceTechInfo(data: BehaviorData): string {
     .join(" | ");
 }
 
+const PLATFORM_LABELS: Record<string, string> = {
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  zalo: "Zalo",
+  google: "Google",
+  instagram: "Instagram",
+  twitter: "X (Twitter)",
+  telegram: "Telegram",
+  messenger: "Messenger",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  pinterest: "Pinterest",
+  reddit: "Reddit",
+  snapchat: "Snapchat",
+  wechat: "WeChat",
+  whatsapp: "WhatsApp",
+  viber: "Viber",
+};
+
+function platformLabel(source: string): string {
+  const key = source.toLowerCase().trim();
+  return PLATFORM_LABELS[key] || source;
+}
+
 export function generateTrafficAdsSource(
   data: BehaviorData,
   fallbackSource = "",
 ): string {
   const rawSource = (data.utm_source || fallbackSource || "").trim();
-  const source = rawSource || (data.ttclid ? "TikTok (ttclid)" : "Direct");
+  const source = rawSource || (data.ttclid ? "TikTok" : "Direct");
   const hasCampaignData = Boolean(
     data.utm_medium ||
       data.utm_campaign ||
@@ -401,15 +425,15 @@ export function generateTrafficAdsSource(
   }
 
   const parts = [
-    `Source: ${source}`,
-    data.utm_medium && `Medium: ${data.utm_medium}`,
-    data.utm_campaign && `Campaign: ${data.utm_campaign}`,
-    data.utm_content && `Content: ${data.utm_content}`,
-    data.utm_term && `Term: ${data.utm_term}`,
-    data.ttclid && `TTCLID: ${data.ttclid}`,
+    `Nguồn: ${platformLabel(source)}`,
+    data.utm_medium && `Kênh: ${data.utm_medium}`,
+    data.utm_campaign && `Chiến dịch: ${data.utm_campaign}`,
+    data.utm_content && `Nội dung: ${data.utm_content}`,
+    data.utm_term && `Từ khoá: ${data.utm_term}`,
+    data.ttclid && `Mã TikTok: ${data.ttclid}`,
   ].filter(Boolean);
 
-  return parts.length > 0 ? parts.join(" | ") : "Nguồn: Truy cập trực tiếp";
+  return parts.length > 0 ? parts.join(" · ") : "Nguồn: Truy cập trực tiếp";
 }
 
 export function buildVisitorBehaviorPayload(
