@@ -21,7 +21,6 @@ export type AdminModalKey =
   | "leads"
   | "webmaster"
   | "pixel"
-  | "utm"
   | "cron"
   | "storage"
   | "seo"
