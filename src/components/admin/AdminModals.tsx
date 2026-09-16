@@ -576,7 +576,6 @@ function PixelModal({ onClose }: ModalProps) {
 function WebmasterModal({ onClose }: ModalProps) {
   const { config, update } = useSiteConfig();
   const t = config.tracking;
-  const [logs, setLogs] = useState<TestEventLog[] | null>(null);
   return (
     <AdminModal
       title="Webmaster & Custom Scripts"

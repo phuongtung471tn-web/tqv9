@@ -409,7 +409,8 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         if (thankYou && typeof window !== "undefined")
           window.location.assign(`/${thankYou.path}`);
       }
-    } catch {
+    } catch (err) {
+      console.error("Lead submit failed:", err);
       setError(
         "Có lỗi khi gửi thông tin. Vui lòng kiểm tra kết nối và thử gửi lại.",
       );
