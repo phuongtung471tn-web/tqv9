@@ -166,6 +166,16 @@ function scoreLead(
   };
 }
 
+const VIP_DEVICE_RE = /iPhone (12|13|14|15|16)|Galaxy S(22|23|24|25)|Fold|Flip|Pixel/i;
+const KEY_REGION_RE = /Nghệ An|Hà Tĩnh|Quảng Bình|Thanh Hóa|Quảng Ninh|Hải Phòng/i;
+
+/** Giờ Việt Nam (UTC+7) — dùng cho mọi nhánh thời gian bất kể múi giờ trình duyệt. */
+function vietnamHour(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60_000;
+  return new Date(utc + 7 * 3_600_000).getHours();
+}
+
 function generateSaleAdvice(
   data: BehaviorData,
   assessment: LeadAssessment = scoreLead(data),
@@ -181,18 +191,40 @@ function generateSaleAdvice(
   }
 
   const advice: string[] = [];
-  const isHighEndDevice =
-    /iPhone (12|13|14|15|16)|Galaxy S(22|23|24|25)|Fold|Flip|Pixel/i.test(
-      data.device_model_name,
-    );
-  const isKeyRegion =
-    /Nghệ An|Hà Tĩnh|Quảng Bình|Thanh Hóa|Quảng Ninh|Hải Phòng/i.test(
-      data.form_city,
-    );
-  const isNightTime = (() => {
-    const hour = new Date().getHours();
-    return hour >= 22 || hour <= 6;
-  })();
+  const isHighEndDevice = VIP_DEVICE_RE.test(data.device_model_name);
+  const isKeyRegion = KEY_REGION_RE.test(data.form_city);
+  const hour = vietnamHour();
+  const isNightTime = hour >= 22 || hour <= 6;
+  const nganh = data.nganh_hoc || "chưa chọn ngành";
+
+  const faqAdvice: Record<string, [string, string]> = {
+    hoc_phi: [
+      "💡 [LO NGẠI HỌC PHÍ] Khách mở FAQ về học phí 0Đ — cần xác minh niềm tin.",
+      "👉 Giải thích rõ nguồn tài trợ từ doanh nghiệp Trung Quốc, liệt kê chi phí thực tế (hồ sơ, vé, sinh hoạt) và nhấn mạnh không thu phí trung gian.",
+    ],
+    tieng_trung: [
+      "💡 [LO NGẠI NGÔN NGỮ] Khách quan tâm rào cản tiếng Trung và điều kiện đầu vào.",
+      "👉 Tư vấn ngắn, rõ: học từ 0, có lộ trình tiền HSK và hỗ trợ thích nghi trước khi bay.",
+    ],
+    luong_thuc_tap: [
+      "💡 [QUAN TÂM THU NHẬP] Khách mở FAQ về lương thực tập — cần con số cụ thể.",
+      `👉 Nêu mức 15-30 triệu/tháng theo ngành ${nganh}, giải thích ca làm, ký túc xá miễn phí và khả năng gửi tiền về nhà.`,
+    ],
+    bang_cap: [
+      "💡 [QUAN TÂM BẰNG CẤP] Khách hỏi về giá trị bằng cấp và công nhận quốc tế.",
+      "👉 Nhấn mạnh bằng Cao đẳng chính quy, công nhận quốc tế, có thể ở lại làm việc hoặc học liên thông lên Đại học.",
+    ],
+    thoi_gian: [
+      "💡 [QUAN TÂM THỜI GIAN] Khách hỏi về lịch trình nhập học — có nhu cầu đi sớm.",
+      "👉 Nêu 2 kỳ nhập học (tháng 3 và tháng 9), thời gian 3-5 tháng từ đăng ký đến bay, và thời điểm đăng ký lý tưởng.",
+    ],
+    nganh_hoc: [
+      "💡 [QUAN TÂM NGÀNH HỌC] Khách hỏi ngành nào cần nhân lực nhất — đang phân vân lựa chọn.",
+      "👉 Giới thiệu 4 ngành hot nhất (ô tô điện, drone, IoT, logistics), so sánh thu nhập và cơ hội việc làm giữa các ngành.",
+    ],
+  };
+
+  const faq = data.faq_clicked ? faqAdvice[data.faq_clicked] : undefined;
 
   if (
     isHighEndDevice &&
@@ -203,8 +235,11 @@ function generateSaleAdvice(
       `💡 [KHÁCH VIP] Thiết bị ${data.device_model_name}, đọc kỹ trang ${data.time_on_page_seconds}s và cuộn ${data.scroll_depth_percent}%.`,
     );
     advice.push(
-      `👉 Tư vấn theo hướng phụ huynh quan tâm độ an toàn, lộ trình visa và đầu ra nghề nghiệp của ngành ${data.nganh_hoc}.`,
+      `👉 Tư vấn theo hướng phụ huynh quan tâm độ an toàn, lộ trình visa và đầu ra nghề nghiệp của ngành ${nganh}.`,
     );
+  } else if (faq) {
+    advice.push(faq[0]);
+    advice.push(faq[1]);
   } else if (
     data.focus_section === "luong_thuc_tap" ||
     data.copied_text_type === "chi_phi" ||
@@ -214,18 +249,18 @@ function generateSaleAdvice(
       "💡 [KHÁCH QUAN TÂM TÀI CHÍNH] Tập trung vào thu nhập, chi phí và khả năng tự chủ tài chính.",
     );
     advice.push(
-      `👉 Mở đầu bằng mức lương thực tập của ngành ${data.nganh_hoc}, rồi chốt bằng lộ trình học phí 0Đ và cơ hội việc làm sau tốt nghiệp.`,
+      `👉 Mở đầu bằng mức lương thực tập của ngành ${nganh}, rồi chốt bằng lộ trình học phí 0Đ và cơ hội việc làm sau tốt nghiệp.`,
     );
-  } else if (data.faq_clicked === "tieng_trung") {
+  } else if (data.focus_section === "nganh_hoc") {
     advice.push(
-      "💡 [LO NGẠI NGÔN NGỮ] Khách quan tâm rào cản tiếng Trung và điều kiện đầu vào.",
+      "💡 [ĐANG XEM NGÀNH] Khách dừng lâu ở phần ngành học — đang so sánh lựa chọn.",
     );
     advice.push(
-      "👉 Tư vấn ngắn, rõ: học từ 0, có lộ trình tiền HSK và hỗ trợ thích nghi trước khi bay.",
+      `👉 Giới thiệu ${nganh} trước, rồi so sánh với 1-2 ngành gần nhau về thu nhập và đầu ra để giúp khách chốt nhanh.`,
     );
   } else if (data.industry_switch_count > 1) {
     advice.push(
-      `💡 [PHÂN VÂN NGÀNH] Đã đổi ngành ${data.industry_switch_count} lần trước khi chốt ${data.nganh_hoc}.`,
+      `💡 [PHÂN VÂN NGÀNH] Đã đổi ngành ${data.industry_switch_count} lần trước khi chốt ${nganh}.`,
     );
     advice.push(
       "👉 Sale nên đóng vai hướng nghiệp, so sánh đầu ra, môi trường làm việc và thu nhập giữa 2-3 ngành gần nhau.",
@@ -239,7 +274,7 @@ function generateSaleAdvice(
     );
   } else {
     advice.push(
-      `💡 [TÌM HIỂU NGHIÊM TÚC] ${data.device_model_name} · ${data.network_label}. Ngành quan tâm: ${data.nganh_hoc}.`,
+      `💡 [TÌM HIỂU NGHIÊM TÚC] ${data.device_model_name} · ${data.network_label}. Ngành quan tâm: ${nganh}.`,
     );
     advice.push(
       "👉 Gọi tư vấn theo kịch bản khám phá mục tiêu học tập, tài chính và thời điểm nhập học phù hợp.",
@@ -281,9 +316,26 @@ function generateBehaviorSummary(data: BehaviorData): string {
   if (data.industry_switch_count > 0)
     items.push(`🔄 Đổi ngành ${data.industry_switch_count} lần`);
   if (data.focus_section) items.push(`🎯 Tập trung ${data.focus_section}`);
-  if (data.faq_clicked) items.push(`❓ FAQ ${data.faq_clicked}`);
+  const faqLabels: Record<string, string> = {
+    hoc_phi: "học phí 0Đ",
+    tieng_trung: "điều kiện tiếng Trung",
+    luong_thuc_tap: "lương thực tập",
+    bang_cap: "bằng cấp",
+    thoi_gian: "thời gian nhập học",
+    nganh_hoc: "chọn ngành",
+  };
+  if (data.faq_clicked)
+    items.push(`❓ FAQ: ${faqLabels[data.faq_clicked] || data.faq_clicked}`);
   if (data.is_copy_paste) items.push("📋 Có thao tác copy/paste");
+  if (data.scroll_back_count > 10)
+    items.push(`↕️ Cuộn lên/xuống ${data.scroll_back_count} lần`);
+  if (data.is_headless_browser) items.push("🤖 Phát hiện trình duyệt tự động");
+  if (data.is_in_app_browser) items.push("📱 Mở trong app (FB/TikTok/Zalo)");
   return items.join(" | ");
+}
+
+export function joinParts(parts: Array<string | undefined>): string {
+  return parts.filter((part) => part && part !== "Unknown").join(" ");
 }
 
 function generateDeviceTechInfo(data: BehaviorData): string {
@@ -293,19 +345,14 @@ function generateDeviceTechInfo(data: BehaviorData): string {
       : data.hardware_concurrency != null
         ? `${data.hardware_concurrency} cores`
         : "Phần cứng không chia sẻ";
-  const os = [data.operating_system, data.operating_system_version]
-    .filter((part) => part && part !== "Unknown")
-    .join(" ");
-  const browser = [data.browser, data.browser_version]
-    .filter((part) => part && part !== "Unknown")
-    .join(" ");
-  const deviceName = [data.device_manufacturer, data.device_model_name]
-    .filter((part) => part && part !== "Unknown")
-    .join(" ");
+  const os = joinParts([data.operating_system, data.operating_system_version]);
+  const browser = joinParts([data.browser, data.browser_version]);
+  const deviceName = joinParts([data.device_manufacturer, data.device_model_name]);
   return [
     deviceName || "Thiết bị chưa nhận diện",
     os || "Hệ điều hành chưa rõ",
     browser || "Trình duyệt chưa rõ",
+    data.is_in_app_browser ? "Mở trong app (FB/TikTok/Zalo)" : "",
     data.network_label,
     hwInfo,
   ]
@@ -313,8 +360,12 @@ function generateDeviceTechInfo(data: BehaviorData): string {
     .join(" | ");
 }
 
-export function generateTrafficAdsSource(data: BehaviorData): string {
-  const source = (data.utm_source || "Direct").trim();
+export function generateTrafficAdsSource(
+  data: BehaviorData,
+  fallbackSource = "",
+): string {
+  const rawSource = (data.utm_source || fallbackSource || "").trim();
+  const source = rawSource || (data.ttclid ? "TikTok (ttclid)" : "Direct");
   const hasCampaignData = Boolean(
     data.utm_medium ||
       data.utm_campaign ||
@@ -342,6 +393,7 @@ export function generateTrafficAdsSource(data: BehaviorData): string {
 export function buildVisitorBehaviorPayload(
   input: { city: string; major: string },
   cfg?: Parameters<typeof scoreLead>[1],
+  fallbackSource = "",
 ): {
   behavior: BehaviorData;
   assessment: LeadAssessment;
@@ -353,7 +405,7 @@ export function buildVisitorBehaviorPayload(
   const saleAdvice = generateSaleAdvice(behavior, assessment);
   const behaviorSummary = generateBehaviorSummary(behavior);
   const deviceTechInfo = generateDeviceTechInfo(behavior);
-  const trafficAdsSource = generateTrafficAdsSource(behavior);
+  const trafficAdsSource = generateTrafficAdsSource(behavior, fallbackSource);
 
   return {
     behavior,

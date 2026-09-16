@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { trackFormStart, trackLead } from "@/lib/tracking";
 import {
   buildVisitorBehaviorPayload,
+  joinParts,
   markCopyPaste,
   markFormStart,
   markIndustrySwitch,
@@ -248,6 +249,7 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
           major: form.major,
         },
         config.aiAdvisor,
+        sessionSource,
       );
     const { score: aiScore, rank: aiRank } = assessment;
     const variant = getVariant(config.abTest.enabled, config.abTest.split);
@@ -284,15 +286,11 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       device_manufacturer: behavior.device_manufacturer,
       device_family: behavior.device_family,
       device_model_name: behavior.device_model_name,
-      operating_system: [
+      operating_system: joinParts([
         behavior.operating_system,
         behavior.operating_system_version,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      browser: [behavior.browser, behavior.browser_version]
-        .filter(Boolean)
-        .join(" "),
+      ]),
+      browser: joinParts([behavior.browser, behavior.browser_version]),
       network_provider: behavior.network_provider,
       network_label: behavior.network_label,
       sale_advice: visitorBehaviorPayload.saleAdvice,

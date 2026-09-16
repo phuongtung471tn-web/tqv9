@@ -106,6 +106,7 @@ export interface BehaviorData {
   operating_system_version: string;
   browser: string;
   browser_version: string;
+  is_in_app_browser: boolean;
   connection_type: string;
   network_provider: string;
   network_label: string;

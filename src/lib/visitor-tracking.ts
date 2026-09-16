@@ -966,6 +966,7 @@ export function collectBehavior(form: {
     operating_system_version: snapshot.device.osVersion,
     browser: snapshot.device.browserName,
     browser_version: snapshot.device.browserVersion,
+    is_in_app_browser: snapshot.device.isInAppBrowser,
     connection_type: snapshot.network.connectionType,
     network_provider: snapshot.network.provider,
     network_label: snapshot.network.displayLabel,
