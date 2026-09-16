@@ -243,8 +243,12 @@ export interface SiteConfig {
     provider: "resend" | "gmail";
     fromEmail: string;
     notifyEmail: string;
+    resendApiKey: string;
+    gmailClientId: string;
+    gmailClientSecret: string;
+    gmailRefreshToken: string;
     subject: string;
-    body: string; // supports {name} {phone} {city} {ai_score}
+    body: string;
     notifySubject: string;
     notifyBody: string;
   };
@@ -736,6 +740,10 @@ export const DEFAULT_CONFIG: SiteConfig = {
     provider: "resend",
     fromEmail: "",
     notifyEmail: "",
+    resendApiKey: "",
+    gmailClientId: "",
+    gmailClientSecret: "",
+    gmailRefreshToken: "",
     subject: "Cảm ơn {name} đã đăng ký tư vấn du học nghề Trung Quốc",
     body: "Chào {name},\n\nCảm ơn bạn đã để lại thông tin. Đội ngũ tư vấn sẽ liên hệ số {phone} trong thời gian sớm nhất.\n\nTrân trọng.",
     notifySubject: "[Lead mới] {name} — {phone} — {city}",

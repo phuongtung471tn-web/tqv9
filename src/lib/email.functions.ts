@@ -1,7 +1,7 @@
 /**
  * AUTOMATED EMAIL SEQUENCER (auto-responder).
- * Gửi email cảm ơn ngay sau khi khách đăng ký. Chạy phía server để
- * API key không lộ ra trình duyệt: thêm secret RESEND_API_KEY.
+ * Gửi email cảm ơn ngay sau khi khách đăng ký. Chạy phía server.
+ * API key lấy từ payload (Admin nhập trong UI) hoặc env var nếu có.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -13,6 +13,10 @@ const schema = z.object({
   subject: z.string().min(1),
   text: z.string().min(1),
   html: z.string().optional(),
+  resendApiKey: z.string().optional(),
+  gmailClientId: z.string().optional(),
+  gmailClientSecret: z.string().optional(),
+  gmailRefreshToken: z.string().optional(),
 });
 
 export const checkEmailConfig = createServerFn({ method: "GET" }).handler(
@@ -27,9 +31,11 @@ export const checkEmailConfig = createServerFn({ method: "GET" }).handler(
 );
 
 async function sendWithGmail(data: z.infer<typeof schema>) {
-  const clientId = process.env["GMAIL_CLIENT_ID"];
-  const clientSecret = process.env["GMAIL_CLIENT_SECRET"];
-  const refreshToken = process.env["GMAIL_REFRESH_TOKEN"];
+  const clientId = data.gmailClientId || process.env["GMAIL_CLIENT_ID"];
+  const clientSecret =
+    data.gmailClientSecret || process.env["GMAIL_CLIENT_SECRET"];
+  const refreshToken =
+    data.gmailRefreshToken || process.env["GMAIL_REFRESH_TOKEN"];
   if (!clientId || !clientSecret || !refreshToken)
     return { sent: false as const, reason: "missing_gmail_secrets" as const };
 
@@ -81,7 +87,7 @@ export const sendLeadEmail = createServerFn({ method: "POST" })
   .validator((data) => schema.parse(data))
   .handler(async ({ data }) => {
     if (data.provider === "gmail") return sendWithGmail(data);
-    const apiKey = process.env["RESEND_API_KEY"];
+    const apiKey = data.resendApiKey || process.env["RESEND_API_KEY"];
     if (!apiKey) return { sent: false, reason: "missing_api_key" as const };
 
     const res = await fetch("https://api.resend.com/emails", {

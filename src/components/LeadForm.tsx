@@ -383,6 +383,10 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
               subject: fill(config.emailAutomation.subject),
               text: fill(config.emailAutomation.body),
               html: htmlBody(config.emailAutomation.body),
+              resendApiKey: config.emailAutomation.resendApiKey,
+              gmailClientId: config.emailAutomation.gmailClientId,
+              gmailClientSecret: config.emailAutomation.gmailClientSecret,
+              gmailRefreshToken: config.emailAutomation.gmailRefreshToken,
             },
           }).catch((error) =>
             console.warn("Lead confirmation email failed:", error),
@@ -399,6 +403,10 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
               subject: fill(config.emailAutomation.notifySubject),
               text: fill(config.emailAutomation.notifyBody),
               html: htmlBody(config.emailAutomation.notifyBody),
+              resendApiKey: config.emailAutomation.resendApiKey,
+              gmailClientId: config.emailAutomation.gmailClientId,
+              gmailClientSecret: config.emailAutomation.gmailClientSecret,
+              gmailRefreshToken: config.emailAutomation.gmailRefreshToken,
             },
           }).catch((error) =>
             console.warn("Admin notification email failed:", error),

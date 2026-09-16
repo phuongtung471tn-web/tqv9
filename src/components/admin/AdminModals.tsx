@@ -891,6 +891,58 @@ function EmailModal({ onClose }: ModalProps) {
       >
         {validFrom ? "Địa chỉ From hợp lệ." : "Cần nhập email From hợp lệ."}
       </p>
+      {e.provider === "resend" ? (
+        <Field
+          label="Resend API Key"
+          hint="Tạo tại resend.com/api-keys. Dán vào đây hoặc đặt RESEND_API_KEY trên server."
+        >
+          <TextInput
+            type="password"
+            autoComplete="new-password"
+            value={e.resendApiKey}
+            onChange={(ev) =>
+              update((d) => (d.emailAutomation.resendApiKey = ev.target.value))
+            }
+            placeholder="re_..."
+          />
+        </Field>
+      ) : (
+        <>
+          <Field label="Gmail Client ID">
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={e.gmailClientId}
+              onChange={(ev) =>
+                update((d) => (d.emailAutomation.gmailClientId = ev.target.value))
+              }
+              placeholder="xxxx.apps.googleusercontent.com"
+            />
+          </Field>
+          <Field label="Gmail Client Secret">
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={e.gmailClientSecret}
+              onChange={(ev) =>
+                update((d) => (d.emailAutomation.gmailClientSecret = ev.target.value))
+              }
+              placeholder="GOCSPX-..."
+            />
+          </Field>
+          <Field label="Gmail Refresh Token">
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={e.gmailRefreshToken}
+              onChange={(ev) =>
+                update((d) => (d.emailAutomation.gmailRefreshToken = ev.target.value))
+              }
+              placeholder="1//0e..."
+            />
+          </Field>
+        </>
+      )}
       <Field
         label="Email nhận test"
         hint="Chỉ dùng để gửi email kiểm tra, không lưu secret."
@@ -993,6 +1045,10 @@ function EmailModal({ onClose }: ModalProps) {
                   from: e.fromEmail,
                   subject: "Email test từ Funnel Builder",
                   text: "Đây là email kiểm tra cấu hình tự động hóa email.",
+                  resendApiKey: e.resendApiKey,
+                  gmailClientId: e.gmailClientId,
+                  gmailClientSecret: e.gmailClientSecret,
+                  gmailRefreshToken: e.gmailRefreshToken,
                 },
               });
             })
