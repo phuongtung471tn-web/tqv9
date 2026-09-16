@@ -1807,6 +1807,163 @@ function AbTestModal({ onClose }: ModalProps) {
   );
 }
 
+/* -------------------------------- UTM ------------------------------------- */
+function UtmModal({ onClose }: ModalProps) {
+  const [currentParams, setCurrentParams] = useState<
+    Record<string, string> | null
+  >(null);
+  const [testUrl, setTestUrl] = useState("");
+  const [builtUrl, setBuiltUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    const params: Record<string, string> = {};
+    for (const key of [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_content",
+      "utm_term",
+      "ttclid",
+    ]) {
+      const val = p.get(key);
+      if (val) params[key] = val;
+    }
+    if (document.referrer) params["_referrer"] = document.referrer;
+    setCurrentParams(params);
+  }, []);
+
+  function buildUrl() {
+    try {
+      const base = testUrl.trim() || window.location.origin + window.location.pathname;
+      const u = new URL(base);
+      const sources: Record<string, string> = {
+        facebook: "facebook",
+        tiktok: "tiktok",
+        zalo: "zalo",
+        google: "google",
+        instagram: "instagram",
+      };
+      const medium = (document.getElementById("utm-medium") as HTMLInputElement)?.value || "";
+      const campaign = (document.getElementById("utm-campaign") as HTMLInputElement)?.value || "";
+      const content = (document.getElementById("utm-content") as HTMLInputElement)?.value || "";
+      const term = (document.getElementById("utm-term") as HTMLInputElement)?.value || "";
+      const sourceSelect = (document.getElementById("utm-source") as HTMLSelectElement)?.value || "";
+      if (sourceSelect) u.searchParams.set("utm_source", sourceSelect);
+      if (medium) u.searchParams.set("utm_medium", medium);
+      if (campaign) u.searchParams.set("utm_campaign", campaign);
+      if (content) u.searchParams.set("utm_content", content);
+      if (term) u.searchParams.set("utm_term", term);
+      setBuiltUrl(u.toString());
+    } catch {
+      setBuiltUrl("URL không hợp lệ");
+    }
+  }
+
+  return (
+    <AdminModal
+      title="UTM Hub"
+      subtitle="Kiểm tra & tạo link UTM cho chiến dịch quảng cáo"
+      onClose={onClose}
+    >
+      <div className="mb-3 rounded-lg bg-neutral-100 px-3 py-2 dark:bg-white/5">
+        <p className="mb-1 text-xs font-bold uppercase tracking-wide text-neutral-500">
+          UTM trên URL hiện tại
+        </p>
+        {currentParams === null ? (
+          <p className="text-[11px] text-neutral-400">Đang đọc…</p>
+        ) : Object.keys(currentParams).length === 0 ? (
+          <p className="text-[11px] text-neutral-400">
+            Không có tham số UTM — truy cập trực tiếp.
+          </p>
+        ) : (
+          <ul className="space-y-0.5 text-[11px]">
+            {Object.entries(currentParams).map(([k, v]) => (
+              <li key={k}>
+                <strong>{k}</strong>: {v}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mb-2 rounded-lg border border-neutral-200 p-3 dark:border-white/10">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-500">
+          Tạo link UTM
+        </p>
+        <Field label="URL đích (để trống = trang hiện tại)">
+          <TextInput
+            value={testUrl}
+            onChange={(e) => setTestUrl(e.target.value)}
+            placeholder="https://your-site.com/"
+          />
+        </Field>
+        <Field label="Nguồn (utm_source)">
+          <select
+            id="utm-source"
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-neutral-800"
+            defaultValue=""
+          >
+            <option value="">— Chọn —</option>
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">TikTok</option>
+            <option value="zalo">Zalo</option>
+            <option value="google">Google</option>
+            <option value="instagram">Instagram</option>
+            <option value="messenger">Messenger</option>
+            <option value="youtube">YouTube</option>
+            <option value="telegram">Telegram</option>
+          </select>
+        </Field>
+        <Field label="Kênh (utm_medium)">
+          <TextInput id="utm-medium" placeholder="cpc, paid_social, email…" />
+        </Field>
+        <Field label="Chiến dịch (utm_campaign)">
+          <TextInput id="utm-campaign" placeholder="khoahoc_2026_hk1" />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Nội dung (utm_content)">
+            <TextInput id="utm-content" placeholder="banner_top" />
+          </Field>
+          <Field label="Từ khoá (utm_term)">
+            <TextInput id="utm-term" placeholder="hoc_phi_0_dong" />
+          </Field>
+        </div>
+        <button
+          type="button"
+          onClick={buildUrl}
+          className="mt-2 w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-bold text-white dark:bg-white dark:text-neutral-900"
+        >
+          Tạo link UTM
+        </button>
+        {builtUrl && (
+          <div className="mt-2 space-y-1">
+            <p className="break-all rounded-lg bg-neutral-100 px-3 py-2 text-[11px] dark:bg-white/5">
+              {builtUrl}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(builtUrl);
+              }}
+              className="text-[11px] font-bold text-sky-600"
+            >
+              Sao chép link
+            </button>
+          </div>
+        )}
+      </div>
+
+      <p className="text-[11px] leading-relaxed text-neutral-400">
+        Khi khách bấm vào link UTM, hệ thống tự động ghi nhận nguồn và đính kèm
+        vào lead. Nếu không có UTM, hệ thống nhận diện qua referrer (Facebook,
+        TikTok, Zalo, Google…) hoặc ghi "direct".
+      </p>
+    </AdminModal>
+  );
+}
+
 /* ------------------------------- CRON ------------------------------------- */
 function CronModal({ onClose }: ModalProps) {
   const { config, update } = useSiteConfig();
@@ -3685,6 +3842,7 @@ const REGISTRY: Record<AdminModalKey, (p: ModalProps) => ReactElement | null> =
     contact: ContactModal,
     countdown: CountdownModal,
     adminlink: AdminLinkModal,
+    utm: UtmModal,
   };
 
 function SaveHint() {
