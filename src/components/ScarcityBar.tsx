@@ -52,6 +52,19 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
     return () => window.removeEventListener(LEAD_CREATED_EVENT, onLeadCreated);
   }, [c.enabled, c.autoDecrement, c.slotsLeft, update, save]);
 
+  const displaySlots = (() => {
+    if (!c.enabled) return c.slotsLeft;
+    const totalSeconds = (d ?? 0) * 86400 + (h ?? 0) * 3600 + (m ?? 0) * 60 + (s ?? 0);
+    const maxSlots = c.slotsLeft;
+    if (maxSlots <= 0) return 0;
+    const dayProgress = 1 - Math.min(1, totalSeconds / (30 * 86400));
+    const fluctuation = Math.floor(
+      Math.sin(Date.now() / 300000) * 1.5 + Math.cos(Date.now() / 470000) * 1,
+    );
+    const dynamic = Math.round(maxSlots * (0.85 + dayProgress * 0.15)) + fluctuation;
+    return Math.max(1, Math.min(maxSlots, dynamic));
+  })();
+
   if (!c.enabled) return null;
 
   const d = left === null ? 0 : Math.floor(left / 86400000);
@@ -71,7 +84,7 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
       <p className="text-sm font-bold">
         Chỉ còn{" "}
         <span className={accent}>
-          {c.slotsLeft.toString().padStart(2, "0")} suất
+          {displaySlots.toString().padStart(2, "0")} suất
         </span>{" "}
         {c.headline}
       </p>

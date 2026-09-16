@@ -15,8 +15,8 @@ function formatDuration(totalSeconds: number) {
 }
 
 export function FooterStats({
-  title = "Thống kê truy cập",
-  helperText = "Số liệu truy cập được gom chung để đồng bộ giữa Analytics, CRM và webhook.",
+  title = "Thong ke truy cap",
+  helperText = "So lieu truy cap duoc gom chung de dong bo giua Analytics, CRM va webhook.",
 }: {
   title?: string;
   helperText?: string;
@@ -26,27 +26,23 @@ export function FooterStats({
   const quickStats = [
     {
       icon: Users,
-      label: "Truy cập hôm nay",
+      label: "Hom nay",
       value: snapshot.metrics.sessionCounts.today.toLocaleString("vi-VN"),
-      hint: "Lượt trong ngày",
     },
     {
       icon: CalendarDays,
-      label: "Truy cập tháng này",
+      label: "Thang nay",
       value: snapshot.metrics.sessionCounts.month.toLocaleString("vi-VN"),
-      hint: "Lượt trong tháng",
     },
     {
       icon: Clock,
-      label: "Thời gian trên trang",
+      label: "Thoi gian",
       value: formatDuration(snapshot.metrics.timeOnPageSeconds),
-      hint: "Phút:giây",
     },
     {
       icon: MousePointerClick,
-      label: "Độ sâu cuộn",
+      label: "Cuon",
       value: `${Math.min(100, Math.max(0, snapshot.metrics.scrollDepthPercent))}%`,
-      hint: "Mức đã xem",
     },
   ];
 
@@ -54,45 +50,38 @@ export function FooterStats({
 
   return (
     <aside
-      aria-label="Thống kê lưu lượng truy cập"
-      className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-[var(--shadow-card)] backdrop-blur sm:rounded-3xl"
+      aria-label="Thong ke luu luong truy cap"
+      className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5"
     >
-      <div className="flex flex-col gap-3 border-b border-border/60 bg-gradient-to-br from-primary/10 via-card to-card px-4 py-4 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h3 className="text-sm font-extrabold text-foreground sm:text-base md:text-lg">
-            {title}
-          </h3>
-          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:text-xs md:text-sm">
-            {helperText}
-          </p>
-        </div>
-        <span className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-primary ring-1 ring-primary/20 sm:px-3 sm:text-[11px]">
-          <span className="relative flex h-2 w-2" aria-hidden="true">
-            {isLive && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-            )}
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-          </span>
-          {isLive ? "Trực tiếp" : "Đang khởi tạo"}
+      <div className="mb-2 flex items-center gap-2">
+        <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+          {isLive && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+          )}
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
+        <h3 className="text-[11px] font-bold text-muted-foreground">
+          {title}
+        </h3>
       </div>
-
-      <div className="grid grid-cols-2 gap-px bg-border/60 lg:grid-cols-4">
+      <div className="grid grid-cols-4 gap-2">
         {quickStats.map((stat) => (
-          <div key={stat.label} className="bg-card px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[11px]">
-              <stat.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{stat.label}</span>
+          <div key={stat.label} className="text-center">
+            <div className="flex items-center justify-center gap-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground/70">
+              <stat.icon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
             </div>
-            <p className="mt-2 text-xl font-black tabular-nums text-foreground sm:text-2xl md:text-3xl">
+            <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
               {stat.value}
             </p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-[11px]">
-              {stat.hint}
+            <p className="text-[8px] leading-tight text-muted-foreground/60">
+              {stat.label}
             </p>
           </div>
         ))}
       </div>
+      <p className="mt-1.5 text-[9px] leading-tight text-muted-foreground/50">
+        {helperText}
+      </p>
     </aside>
   );
 }

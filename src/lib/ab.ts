@@ -69,11 +69,33 @@ export function detectReferrerSource(referrer: string): string {
   }
 }
 
+import { detectDevice } from "@/lib/visitor-tracking";
+
 export function utmSource(): string {
   if (typeof window === "undefined") return "direct";
   const p = new URLSearchParams(window.location.search);
   const utm = p.get("utm_source");
   if (utm) return utm;
+
+  // Đọc UTM đã lưu từ lần truy cập đầu (readAttribution lưu vào localStorage)
+  try {
+    const stored = JSON.parse(
+      window.localStorage.getItem("lp_utm_v2") || "{}",
+    ) as Record<string, string>;
+    if (stored.utm_source) return stored.utm_source;
+  } catch {
+    /* ignore */
+  }
+
+  // Phát hiện nguồn từ in-app browser (FB/TikTok/Zalo) khi referrer rỗng
+  const device = detectDevice();
+  if (device.isInAppBrowser) {
+    const ua = navigator.userAgent;
+    if (/FBAN|FBAV|Facebook/i.test(ua)) return "facebook";
+    if (/TikTok|BytedanceWebview/i.test(ua)) return "tiktok";
+    if (/Zalo/i.test(ua)) return "zalo";
+  }
+
   if (document.referrer) return detectReferrerSource(document.referrer);
   return "direct";
 }

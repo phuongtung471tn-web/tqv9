@@ -439,16 +439,34 @@ function readAttribution(): TrafficAttribution {
   const stored = readJSON<Record<string, string>>(ATTRIBUTION_KEY, {});
   const params = new URLSearchParams(window.location.search);
   const pick = (key: string) => params.get(key) || stored[key] || "";
+
+  // Phát hiện nguồn từ in-app browser khi URL không có utm_source
+  let detectedSource = pick("utm_source");
+  let detectedMedium = pick("utm_medium");
+  if (!detectedSource) {
+    const ua = navigator.userAgent;
+    if (/FBAN|FBAV|Facebook/i.test(ua)) {
+      detectedSource = "facebook";
+      if (!detectedMedium) detectedMedium = "social";
+    } else if (/TikTok|BytedanceWebview/i.test(ua)) {
+      detectedSource = "tiktok";
+      if (!detectedMedium) detectedMedium = "social";
+    } else if (/Zalo/i.test(ua)) {
+      detectedSource = "zalo";
+      if (!detectedMedium) detectedMedium = "social";
+    }
+  }
+
   const attribution: TrafficAttribution = {
-    source: pick("utm_source"),
-    medium: pick("utm_medium"),
+    source: detectedSource,
+    medium: detectedMedium,
     campaign: pick("utm_campaign"),
     content: pick("utm_content"),
     term: pick("utm_term"),
     ttclid: pick("ttclid"),
     landingUrl: window.location.href.split("#")[0] ?? window.location.href,
   };
-  if (params.toString()) {
+  if (params.toString() || detectedSource) {
     writeJSON(ATTRIBUTION_KEY, {
       utm_source: attribution.source,
       utm_medium: attribution.medium,

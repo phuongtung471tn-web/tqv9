@@ -468,7 +468,7 @@ function Landing() {
 
       {config.trafficStats.enabled &&
         config.trafficStats.position === "afterHero" && (
-          <section className="border-b border-border bg-background py-8 sm:py-10">
+          <section className="border-b border-border/40 bg-muted/20 py-3">
             <div className="mx-auto max-w-6xl px-4">
               <FooterStats
                 title={config.trafficStats.title}
@@ -699,6 +699,7 @@ function Landing() {
 
       {/* FAQ */}
       <section
+        id="faq"
         style={sectionStyle("faq")}
         className="mx-auto max-w-3xl px-4 py-16 sm:py-20"
       >

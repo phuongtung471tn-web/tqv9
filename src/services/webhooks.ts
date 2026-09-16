@@ -204,15 +204,34 @@ export async function dispatchLead(
 
   if (uniqueEndpoints.length === 0) return { ok: true, results: [] };
 
+  const supabase = {
+    url: config.admin.supabaseUrl,
+    key: config.admin.supabaseAnonKey,
+  };
+
   const results = await Promise.all(
-    uniqueEndpoints.map((ep) =>
-      postOne(ep, payload, {
-        url: config.admin.supabaseUrl,
-        key: config.admin.supabaseAnonKey,
-      }),
-    ),
+    uniqueEndpoints.map((ep) => postOne(ep, payload, supabase)),
   );
+
+  // Fallback: nếu fetch thất bại, thử sendBeacon (hoạt động ngay cả khi
+  // in-app browser chặn fetch hoặc khi trang đang redirect)
   const failed = results.filter((r) => !r.ok);
+  if (failed.length > 0 && typeof navigator !== "undefined" && navigator.sendBeacon) {
+    for (const ep of uniqueEndpoints) {
+      const result = results.find((r) => r.label === (ep.label || ep.type));
+      if (result?.ok) continue;
+      if (ep.type === "telegram" || ep.type === "supabase") continue; // sendBeacon chỉ cho POST JSON đơn giản
+      try {
+        const blob = new Blob([JSON.stringify(payload)], {
+          type: "application/json",
+        });
+        navigator.sendBeacon(ep.url, blob);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   return {
     ok: failed.length === 0 || results.some((r) => r.ok),
     results,
