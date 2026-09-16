@@ -89,6 +89,7 @@ export interface FomoConfig {
 export interface CountdownConfig {
   enabled: boolean;
   slotsLeft: number;
+  autoDecrement: boolean;
   headline: string;
   endMode: "endOfMonth" | "fixed";
   endDate: string; // ISO, used when endMode === "fixed"
@@ -629,6 +630,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   countdown: {
     enabled: true,
     slotsLeft: 12,
+    autoDecrement: true,
     headline: "suất học bổng miễn 100% KTX tháng này",
     endMode: "endOfMonth",
     endDate: "",

@@ -344,6 +344,11 @@ function CountdownModal({ onClose }: ModalProps) {
           }
         />
       </Field>
+      <Toggle
+        checked={c.autoDecrement !== false}
+        onChange={(v) => update((d) => (d.countdown.autoDecrement = v))}
+        label="Tự giảm số suất khi có khách đăng ký"
+      />
       <Field label="Dòng chữ mô tả">
         <TextInput
           value={c.headline}

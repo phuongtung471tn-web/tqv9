@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useSiteConfig } from "@/lib/use-site-config";
+import { LEAD_CREATED_EVENT } from "@/services/dataAdapter";
 
 function endOfMonth() {
   const now = new Date();
@@ -21,7 +22,7 @@ function pad(n: number) {
 
 /** Đếm ngược + số suất còn lại, lấy trực tiếp từ cấu hình Admin. */
 export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
-  const { config } = useSiteConfig();
+  const { config, update, save } = useSiteConfig();
   const c = config.countdown;
   const [left, setLeft] = useState<number | null>(null);
 
@@ -37,6 +38,19 @@ export function ScarcityBar({ tone = "light" }: { tone?: "light" | "dark" }) {
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, [validTarget]);
+
+  useEffect(() => {
+    if (!c.enabled || c.autoDecrement === false) return;
+    const onLeadCreated = () => {
+      if (c.slotsLeft <= 0) return;
+      update((d) => {
+        d.countdown.slotsLeft = Math.max(0, d.countdown.slotsLeft - 1);
+      });
+      save();
+    };
+    window.addEventListener(LEAD_CREATED_EVENT, onLeadCreated);
+    return () => window.removeEventListener(LEAD_CREATED_EVENT, onLeadCreated);
+  }, [c.enabled, c.autoDecrement, c.slotsLeft, update, save]);
 
   if (!c.enabled) return null;
 
