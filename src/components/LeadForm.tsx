@@ -299,7 +299,6 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
       behavior_summary: visitorBehaviorPayload.behaviorSummary,
       device_tech_info: visitorBehaviorPayload.deviceTechInfo,
       traffic_ads_source: visitorBehaviorPayload.trafficAdsSource,
-      visitor_behavior_payload: visitorBehaviorPayload,
     };
 
     try {
