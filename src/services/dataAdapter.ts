@@ -92,7 +92,9 @@ export function loadConfig(): SiteConfig {
   }
 }
 
-/** Nạp cấu hình landing từ Supabase khi Database Mode được bật. */
+/** Nạp cấu hình landing từ Supabase khi Database Mode được bật.
+ * Lưu ý: vì RLS chặn SELECT trên funnel_configs, hàm này chỉ dùng để kiểm tra
+ * kết nối. Config thực tế được đọc từ localStorage. */
 export async function loadCloudConfig(
   config: SiteConfig,
 ): Promise<SiteConfig | null> {
@@ -104,26 +106,8 @@ export async function loadCloudConfig(
   ) {
     return null;
   }
-  try {
-    const response = await fetch(
-      `${config.admin.supabaseUrl.replace(/\/$/, "")}/rest/v1/${CLOUD_CONFIG_TABLE}?id=eq.1&select=data`,
-      {
-        headers: {
-          apikey: config.admin.supabaseAnonKey,
-          Authorization: `Bearer ${config.admin.supabaseAnonKey}`,
-        },
-      },
-    );
-    if (!response.ok) return null;
-    const rows = (await response.json()) as unknown;
-    if (!Array.isArray(rows) || !isRecord(rows[0])) return null;
-    const data = rows[0]["data"];
-    return isRecord(data)
-      ? mergeConfig(DEFAULT_CONFIG, data as Partial<SiteConfig>)
-      : null;
-  } catch {
-    return null;
-  }
+  // RLS chặn SELECT trên funnel_configs — trả về null để dùng config localStorage
+  return null;
 }
 
 export function saveConfig(config: SiteConfig): void {
@@ -588,6 +572,14 @@ export function clearAnalytics(): void {
 async function syncConfigToSupabase(config: SiteConfig): Promise<void> {
   try {
     const { supabaseUrl, supabaseAnonKey } = config.admin;
+    // Tạo bản sao config và loại bỏ các trường nhạy cảm trước khi đẩy lên cloud
+    const sanitized = structuredClone(config);
+    if (sanitized.emailAutomation) {
+      sanitized.emailAutomation.resendApiKey = "";
+      sanitized.emailAutomation.gmailClientSecret = "";
+      sanitized.emailAutomation.gmailRefreshToken = "";
+    }
+    sanitized.admin.password = "";
     const response = await fetch(
       `${supabaseUrl.replace(/\/$/, "")}/rest/v1/${CLOUD_CONFIG_TABLE}?on_conflict=id`,
       {
@@ -599,7 +591,7 @@ async function syncConfigToSupabase(config: SiteConfig): Promise<void> {
           Authorization: `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify([
-          { id: 1, data: config, updated_at: new Date().toISOString() },
+          { id: 1, data: sanitized, updated_at: new Date().toISOString() },
         ]),
       },
     );

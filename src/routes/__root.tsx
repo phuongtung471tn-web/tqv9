@@ -88,6 +88,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         {
+          "http-equiv": "Cache-Control",
+          content: "no-cache, no-store, must-revalidate",
+        },
+        {
+          "http-equiv": "Pragma",
+          content: "no-cache",
+        },
+        {
+          "http-equiv": "Expires",
+          content: "0",
+        },
+        {
           name: "author",
           content: "Trung tâm Hướng nghiệp & Phát triển Sự nghiệp Quốc tế",
         },

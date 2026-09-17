@@ -267,7 +267,7 @@ export interface SiteConfig {
 export const DEFAULT_CONFIG: SiteConfig = {
   admin: {
     adminPath: "admin",
-    password: "duhoc2026",
+    password: "sha256:715550afe4c673d6047d3a1a18ad7377023e3d018a415b82656fbd59c5f8a7af",
     storageMode: "local",
     supabaseUrl: "",
     supabaseAnonKey: "",

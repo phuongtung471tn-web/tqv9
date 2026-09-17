@@ -60,12 +60,26 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+
+      // Ép no-cache cho mọi HTML response SSR để trình duyệt luôn tải phiên bản mới.
+      const contentType = normalized.headers.get("content-type") ?? "";
+      if (contentType.includes("text/html")) {
+        normalized.headers.set(
+          "Cache-Control",
+          "no-cache, must-revalidate",
+        );
+      }
+
+      return normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache, must-revalidate",
+        },
       });
     }
   },

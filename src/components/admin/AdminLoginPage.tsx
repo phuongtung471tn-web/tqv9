@@ -17,9 +17,10 @@ export function AdminLoginPage() {
     setReady(true);
   }, []);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const nextPassword = passwordInputRef.current?.value ?? password;
-    if (login(nextPassword, config.admin.password)) {
+    const ok = await login(nextPassword, config.admin.password);
+    if (ok) {
       window.location.assign("/");
     } else {
       setError(true);

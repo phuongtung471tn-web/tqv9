@@ -1,0 +1,17 @@
+# Cloudflare Pages / Workers — cache headers
+# Tài nguyên có hash trong tên file (JS/CSS/WebP) -> cache 1 năm, immutable
+/assets/*
+  cache-control: public, max-age=31536000, immutable
+
+# HTML và các trang SSR/SSG -> không cache để luôn nhận phiên bản mới khi deploy
+/*
+  cache-control: no-cache, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
+# Favicon và robots.txt -> cache ngắn 1 giờ, cho phép cập nhật
+/favicon.ico
+  cache-control: public, max-age=3600
+/robots.txt
+  cache-control: public, max-age=3600
+/sitemap.xml
+  cache-control: public, max-age=3600

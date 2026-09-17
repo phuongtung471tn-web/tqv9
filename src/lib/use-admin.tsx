@@ -33,6 +33,19 @@ export type AdminModalKey =
 
 const AUTH_KEY = "funnel_admin_authed_v1";
 
+/** Salt cố định cho hash mật khẩu admin — không phải bí mật, chỉ chống rainbow table. */
+const ADMIN_PW_SALT = "funnel-builder-2026-salt-v1";
+
+/** Hash mật khẩu bằng SHA-256 + salt (Web Crypto API). */
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${ADMIN_PW_SALT}:${password}`);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export type DeviceView = "mobile" | "tablet" | "desktop";
 export type DeviceSize = { width: number; height: number };
 
@@ -44,7 +57,7 @@ export const DEFAULT_DEVICE_SIZES: Record<DeviceView, DeviceSize> = {
 
 interface AdminContextValue {
   authed: boolean;
-  login: (password: string, expected: string) => boolean;
+  login: (password: string, expected: string) => Promise<boolean>;
   logout: () => void;
   activeModal: AdminModalKey | null;
   openModal: (key: AdminModalKey) => void;
@@ -119,8 +132,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback((password: string, expected: string) => {
-    if (password && password === expected) {
+  const login = useCallback(async (password: string, expected: string) => {
+    if (!password || !expected) return false;
+    const inputHash = await hashPassword(password);
+    const expectedHash = expected.startsWith("sha256:")
+      ? expected.slice(7)
+      : await hashPassword(expected);
+    if (inputHash === expectedHash) {
       setAuthed(true);
       try {
         window.sessionStorage.setItem(AUTH_KEY, "1");

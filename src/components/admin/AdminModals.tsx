@@ -1,4 +1,4 @@
-import { checkEmailConfig, sendTestEmail } from "@/lib/email.functions";
+import { sendTestEmail } from "@/lib/email.functions";
 import { Download, GraduationCap, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 
@@ -1025,33 +1025,38 @@ function EmailModal({ onClose }: ModalProps) {
           testState === "testing"
         }
         onClick={() => {
-          setTestState("testing");
-          void checkEmailConfig()
-            .then((result) => {
-              const configured =
-                e.provider === "gmail"
-                  ? result.gmailConfigured
-                  : result.resendConfigured;
-              if (!configured)
-                throw new Error(
-                  e.provider === "gmail"
-                    ? "Thiếu GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET hoặc GMAIL_REFRESH_TOKEN."
-                    : "Thiếu RESEND_API_KEY.",
+          // Kiểm tra credentials từ UI input trước (không chỉ env var)
+          const hasUiKey =
+            e.provider === "resend"
+              ? Boolean(e.resendApiKey.trim())
+              : Boolean(
+                  e.gmailClientId.trim() &&
+                    e.gmailClientSecret.trim() &&
+                    e.gmailRefreshToken.trim(),
                 );
-              return sendTestEmail({
-                data: {
-                  provider: e.provider,
-                  to: testTo,
-                  from: e.fromEmail,
-                  subject: "Email test từ Funnel Builder",
-                  text: "Đây là email kiểm tra cấu hình tự động hóa email.",
-                  resendApiKey: e.resendApiKey,
-                  gmailClientId: e.gmailClientId,
-                  gmailClientSecret: e.gmailClientSecret,
-                  gmailRefreshToken: e.gmailRefreshToken,
-                },
-              });
-            })
+          if (!hasUiKey) {
+            setTestState("error");
+            setTestMessage(
+              e.provider === "gmail"
+                ? "Thiếu Gmail Client ID / Secret / Refresh Token. Nhập vào các ô bên trên hoặc đặt env var trên server."
+                : "Thiếu Resend API Key. Dán vào ô bên trên hoặc đặt RESEND_API_KEY trên server.",
+            );
+            return;
+          }
+          setTestState("testing");
+          void sendTestEmail({
+            data: {
+              provider: e.provider,
+              to: testTo,
+              from: e.fromEmail,
+              subject: "Email test từ Funnel Builder",
+              text: "Đây là email kiểm tra cấu hình tự động hóa email.",
+              resendApiKey: e.resendApiKey,
+              gmailClientId: e.gmailClientId,
+              gmailClientSecret: e.gmailClientSecret,
+              gmailRefreshToken: e.gmailRefreshToken,
+            },
+          })
             .then((result) => {
               setTestState(result.sent ? "ok" : "error");
               setTestMessage(
@@ -1611,7 +1616,8 @@ function AdminLinkModal({ onClose }: ModalProps) {
 
   const path = a.adminPath.trim().replace(/^\/+|\/+$/g, "");
 
-  function handleSave() {
+  const isHashed = a.password.startsWith("sha256:");
+  async function handleSave() {
     if (!/^[a-z0-9-]{3,40}$/i.test(path)) {
       setMsg({
         ok: false,
@@ -1619,15 +1625,32 @@ function AdminLinkModal({ onClose }: ModalProps) {
       });
       return;
     }
-    if (a.password.length < 4) {
-      setMsg({ ok: false, text: "Mật khẩu cần tối thiểu 4 ký tự." });
+    // Nếu mật khẩu đã hash và user không sửa thì giữ nguyên
+    const newPassword = isHashed ? confirm : a.password;
+    if (!isHashed && newPassword.length < 6) {
+      setMsg({ ok: false, text: "Mật khẩu cần tối thiểu 6 ký tự." });
       return;
     }
-    if (a.password !== confirm) {
+    if (!isHashed && newPassword !== confirm) {
       setMsg({ ok: false, text: "Hai ô mật khẩu chưa khớp nhau." });
       return;
     }
-    update((d) => (d.admin.adminPath = path));
+    // Hash mật khẩu mới trước khi lưu
+    let hashedPassword = a.password;
+    if (!isHashed && newPassword) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(`funnel-builder-2026-salt-v1:${newPassword}`);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      hashedPassword =
+        "sha256:" +
+        Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+    }
+    update((d) => {
+      d.admin.adminPath = path;
+      d.admin.password = hashedPassword;
+    });
     save();
     setMsg({
       ok: true,
@@ -1650,10 +1673,11 @@ function AdminLinkModal({ onClose }: ModalProps) {
           }}
         />
       </Field>
-      <Field label="Mật khẩu quản trị">
+      <Field label="Mật khẩu quản trị" hint={isHashed ? "Đã lưu dạng hash. Nhập mật khẩu mới để đổi." : ""}>
         <TextInput
-          type="text"
-          value={a.password}
+          type="password"
+          value={isHashed ? "" : a.password}
+          placeholder={isHashed ? "•••••• (đã hash)" : ""}
           onChange={(e) => {
             setMsg(null);
             update((d) => (d.admin.password = e.target.value));
@@ -1662,7 +1686,7 @@ function AdminLinkModal({ onClose }: ModalProps) {
       </Field>
       <Field label="Nhập lại mật khẩu">
         <TextInput
-          type="text"
+          type="password"
           value={confirm}
           onChange={(e) => {
             setMsg(null);
@@ -1695,8 +1719,8 @@ function AdminLinkModal({ onClose }: ModalProps) {
       )}
 
       <p className="mt-3 text-[11px] text-neutral-400">
-        Lưu ý: đây là mật khẩu phía client cho tiện chỉnh sửa nhanh. Với dữ liệu
-        nhạy cảm hãy dùng Supabase Row Level Security.
+        Mật khẩu được mã hóa (hash SHA-256) trước khi lưu — không lưu dạng text
+        rõ. Với dữ liệu nhạy cảm hãy dùng Supabase Row Level Security.
       </p>
     </AdminModal>
   );
@@ -1968,6 +1992,65 @@ function UtmModal({ onClose }: ModalProps) {
 function CronModal({ onClose }: ModalProps) {
   const { config, update } = useSiteConfig();
   const a = config.admin;
+  const e = config.emailAutomation;
+  const [backupState, setBackupState] = useState<
+    "idle" | "testing" | "ok" | "error"
+  >("idle");
+  const [backupMessage, setBackupMessage] = useState("");
+
+  const supabaseUrl = a.supabaseUrl?.trim() ?? "";
+  const hasBackupConfig = Boolean(a.backupEmail.trim());
+  const hasResendKey = Boolean(e.resendApiKey.trim());
+
+  async function runBackupNow() {
+    if (!a.backupEmail.trim()) {
+      setBackupState("error");
+      setBackupMessage("Cần nhập email nhận backup.");
+      return;
+    }
+    if (!supabaseUrl) {
+      setBackupState("error");
+      setBackupMessage(
+        "Cần bật Database Mode và nhập Supabase URL trong mục Database.",
+      );
+      return;
+    }
+    setBackupState("testing");
+    setBackupMessage("Đang gửi backup...");
+    try {
+      const fnUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/backup-email`;
+      const res = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${a.supabaseAnonKey ?? ""}`,
+        },
+        body: JSON.stringify({
+          backupEmail: a.backupEmail,
+          fromEmail: e.fromEmail || "backup@resend.dev",
+          schedule: a.cronSchedule === "weekly" ? "weekly" : "daily",
+        }),
+      });
+      const result = (await res.json()) as Record<string, unknown>;
+      if (res.ok && result.success) {
+        setBackupState("ok");
+        setBackupMessage(
+          `Backup thành công! ${result.leadCount ?? 0} leads đã được gửi tới ${a.backupEmail}.`,
+        );
+      } else {
+        setBackupState("error");
+        setBackupMessage(
+          `Lỗi: ${(result.error as string) ?? "Không xác định"}`,
+        );
+      }
+    } catch (err) {
+      setBackupState("error");
+      setBackupMessage(
+        err instanceof Error ? err.message : "Không gọi được backup function.",
+      );
+    }
+  }
+
   return (
     <AdminModal
       title="Cloud Cron & Backup"
@@ -1999,10 +2082,47 @@ function CronModal({ onClose }: ModalProps) {
           ))}
         </div>
       </Field>
+      <div className="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] leading-relaxed text-sky-800">
+        <p className="font-bold">Cách thiết lập cron backup:</p>
+        <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+          <li>Bật Database Mode và nhập Supabase URL trong mục Database.</li>
+          <li>
+            Nhập Resend API Key trong mục Tự Động Hóa Email (dùng để gửi email
+            backup).
+          </li>
+          <li>Chọn lịch (hàng ngày / hàng tuần) và nhập email nhận backup.</li>
+          <li>
+            Tạo cron job gọi edge function{" "}
+            <code>backup-email</code> qua cron-job.org hoặc Supabase Schedule
+            (xem DEPLOY_GUIDE.md).
+          </li>
+        </ol>
+      </div>
+      <button
+        type="button"
+        disabled={
+          !hasBackupConfig ||
+          !hasResendKey ||
+          !supabaseUrl ||
+          backupState === "testing"
+        }
+        onClick={runBackupNow}
+        className="w-full rounded-lg border border-neutral-300 py-2.5 text-xs font-bold disabled:opacity-40"
+      >
+        {backupState === "testing"
+          ? "Đang gửi backup..."
+          : "Gửi backup ngay (test)"}
+      </button>
+      {backupState !== "idle" && backupState !== "testing" && (
+        <p
+          className={`mt-2 text-xs font-semibold ${backupState === "ok" ? "text-emerald-600" : "text-red-600"}`}
+        >
+          {backupMessage}
+        </p>
+      )}
       <p className="text-[11px] text-neutral-400">
-        Cron chạy phía Supabase Edge Function / cron-job.org khi ở Database
-        Mode. Ở Local Mode, mỗi lần LƯU sẽ tạo snapshot backup tự động (giữ 10
-        bản gần nhất).
+        Ở Local Mode, mỗi lần LƯU sẽ tạo snapshot backup tự động trong trình
+        duyệt (giữ 10 bản gần nhất). Backup email chỉ hoạt động ở Database Mode.
       </p>
       <SaveHint />
     </AdminModal>
@@ -3629,7 +3749,7 @@ function GuideModal({ onClose }: ModalProps) {
       label: "Admin có đường dẫn và mật khẩu an toàn cơ bản",
       ok:
         /^[a-z0-9-]+$/i.test(adminPath) &&
-        config.admin.password.trim().length >= 6 &&
+        config.admin.password.startsWith("sha256:") &&
         config.admin.password !== DEFAULT_CONFIG.admin.password,
       purpose:
         "Giảm truy cập nhầm hoặc rủi ro giữ nguyên thông tin đăng nhập mặc định.",
